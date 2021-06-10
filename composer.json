@@ -36,6 +36,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
+        "unit:tests": "./vendor/bin/phpunit",
         "stan:analyse": "./vendor/bin/phpstan analyse",
         "lint:analyse": "./vendor/bin/phpcs --standard=phpcs.xml .",
         "lint:fix": "./vendor/bin/phpcbf --standard=phpcs.xml ."
