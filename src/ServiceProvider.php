@@ -5,7 +5,7 @@ namespace SupportPal\Pollcast;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Support\ServiceProvider;
 
-class PollcastServiceProvider extends ServiceProvider
+class ServiceProvider extends ServiceProvider
 {
     public function boot(BroadcastManager $manager): void
     {

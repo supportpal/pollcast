@@ -3,7 +3,7 @@
 namespace Tests;
 
 use Illuminate\Contracts\Foundation\Application;
-use SupportPal\Pollcast\PollcastServiceProvider;
+use SupportPal\Pollcast\ServiceProvider;
 
 use function realpath;
 
@@ -29,7 +29,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getServiceProviderClass(): string
     {
-        return PollcastServiceProvider::class;
+        return ServiceProvider::class;
     }
 
     /**
@@ -53,7 +53,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getPackageProviders($app): array
     {
-        return [PollcastServiceProvider::class];
+        return [ServiceProvider::class];
     }
 
     /**
