@@ -78,6 +78,7 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 
+node_modules/
 phpunit.xml
 phpstan.neon
 composer.lock

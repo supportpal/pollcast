@@ -1,6 +1,9 @@
+/.github export-ignore
 /.gitignore export-ignore
 /.gitattributes export-ignore
-/.gitlab-ci.yml export-ignore
+/.releaserc export-ignore
+/compose.json export-ignore
+/gulpfile.js export-ignore
 /phpcs.xml export-ignore
 /phpstan.neon.dist export-ignore
 /phpunit.xml export-ignore
