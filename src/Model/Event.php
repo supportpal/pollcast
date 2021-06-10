@@ -12,12 +12,12 @@ class Event extends Model
     public $incrementing = false;
 
     /** @var string[] */
-    protected $fillable = ['channels', 'events', 'payload'];
+    protected $fillable = ['channels', 'event', 'payload'];
 
     /** @var string[] */
     protected $casts = [
         'channels' => 'json',
-        'events'   => 'string',
+        'event'    => 'string',
         'payload'  => 'json',
     ];
 
