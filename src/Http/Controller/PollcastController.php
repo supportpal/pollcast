@@ -32,9 +32,9 @@ class PollcastController
         }
 
         return new JsonResponse([
-            'status'    => 'success',
-            'time'     => Carbon::now()->toDateTimeString(),
-            'payloads' => $query->get()->map(function (Event $item) use ($request) {
+            'status' => 'success',
+            'time'   => Carbon::now()->toDateTimeString(),
+            'events' => $query->get()->map(function (Event $item) use ($request) {
                 $item->setAttribute('delay', $item->delay($request->get('time')));
 
                 return $item;
