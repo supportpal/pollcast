@@ -3,6 +3,7 @@
 namespace SupportPal\Pollcast\Model;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class Event extends Model
 {
@@ -16,4 +17,9 @@ class Event extends Model
         'events'   => 'string',
         'payload'  => 'json',
     ];
+
+    public function createdAt(): Carbon
+    {
+        return $this->{$this->getCreatedAtColumn()};
+    }
 }

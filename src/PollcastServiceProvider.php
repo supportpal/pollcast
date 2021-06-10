@@ -3,15 +3,14 @@
 namespace SupportPal\Pollcast;
 
 use Illuminate\Broadcasting\BroadcastManager;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
 class PollcastServiceProvider extends ServiceProvider
 {
     public function boot(BroadcastManager $manager): void
     {
-        $manager->extend('polycast', function (Application $app, $config) {
-            return new PollcastBroadcaster($config);
+        $manager->extend('polycast', function () {
+            return new PollcastBroadcaster;
         });
 
         $this->loadRoutesFrom(__DIR__.'/Http/routes.php');

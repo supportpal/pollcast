@@ -35,11 +35,10 @@ class PollcastController
         }
 
         $payload = $query->get()->map(function (Event $item, $key) use ($request) {
-            $created = Carbon::createFromFormat('Y-m-d H:i:s', $item->created_at);
             $requested = Carbon::createFromFormat('Y-m-d H:i:s', $request->get('time'));
-
-            $item->delay = $requested->diffInSeconds($created);
-            $item->requested_at = $requested->toDateTimeString();
+            if ($requested !== false) {
+                $item->setAttribute('delay', $requested->diffInSeconds($item->createdAt()));
+            }
 
             return $item;
         });

@@ -3,24 +3,21 @@
 namespace SupportPal\Pollcast;
 
 use Carbon\Carbon;
-use Illuminate\Contracts\Broadcasting\Broadcaster;
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
+use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
 use SupportPal\Pollcast\Model\Event;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+use function is_bool;
 use function json_encode;
 
-class PollcastBroadcaster implements Broadcaster
+class PollcastBroadcaster extends Broadcaster
 {
-    /** @var int */
-    private $gcMins;
+    use UsePusherChannelConventions;
 
-    /**
-     * @param mixed[] $config
-     */
-    public function __construct(array $config)
-    {
-        $this->gcMins = $config['gc_mins'] ?? 2;
-    }
+    /** @var int */
+    private $gcMins = 2;
 
     /**
      * Authenticate the incoming request for a given channel.
@@ -30,7 +27,15 @@ class PollcastBroadcaster implements Broadcaster
      */
     public function auth($request)
     {
-        // todo
+        $channelName = $this->normalizeChannelName($request->channel_name);
+
+        if ($this->isGuardedChannel($request->channel_name)
+            && ! $this->retrieveUser($request, $channelName)
+        ) {
+            throw new AccessDeniedHttpException;
+        }
+
+        return parent::verifyUserCanAccessChannel($request, $channelName);
     }
 
     /**
@@ -38,11 +43,22 @@ class PollcastBroadcaster implements Broadcaster
      *
      * @param mixed|Request $request
      * @param mixed $result
-     * @return mixed
+     * @return string|false
      */
     public function validAuthenticationResponse($request, $result)
     {
-        // todo
+        if (is_bool($result)) {
+            return json_encode($result);
+        }
+
+        $channelName = $this->normalizeChannelName($request->channel_name);
+
+        return json_encode([
+            'channel_data' => [
+                'user_id' => $this->retrieveUser($request, $channelName)->getAuthIdentifier(),
+                'user_info' => $result,
+            ]
+        ]);
     }
 
     /**
