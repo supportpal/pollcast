@@ -23,6 +23,8 @@ class CreatePollcastEventsTable extends Migration
             $table->text('event');
             $table->text('payload');
             $table->timestamps();
+
+            $table->index('created_at');
         });
     }
 

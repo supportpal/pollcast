@@ -23,7 +23,6 @@ class PollcastController
         foreach ($request->get('channels') as $channel => $events) {
             foreach ($events as $event) {
                 $query->orWhere(function ($query) use ($channel, $event, $request) {
-                    // todo remove like wildcard? index these 3 columns?
                     $query->where('channels', 'like', '%"'.$channel.'"%')
                         ->where('event', '=', $event)
                         ->where('created_at', '>=', $request->get('time'));
