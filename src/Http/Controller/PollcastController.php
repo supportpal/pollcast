@@ -3,8 +3,8 @@
 namespace SupportPal\Pollcast\Http\Controller;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Event;
 
 class PollcastController
@@ -17,13 +17,10 @@ class PollcastController
         ]);
     }
 
-    public function receive(Request $request): JsonResponse
+    public function receive(ReceiveRequest $request): JsonResponse
     {
         $query = Event::query()->select('*');
-
-        $channels = $request->get('channels', []);
-
-        foreach ($channels as $channel => $events) {
+        foreach ($request->get('channels') as $channel => $events) {
             foreach ($events as $event) {
                 $query->orWhere(function ($query) use ($channel, $event, $request) {
                     // todo remove like wildcard? index these 3 columns?
@@ -34,19 +31,14 @@ class PollcastController
             }
         }
 
-        $payload = $query->get()->map(function (Event $item, $key) use ($request) {
-            $requested = Carbon::createFromFormat('Y-m-d H:i:s', $request->get('time'));
-            if ($requested !== false) {
-                $item->setAttribute('delay', $requested->diffInSeconds($item->createdAt()));
-            }
-
-            return $item;
-        });
-
         return new JsonResponse([
             'status'    => 'success',
             'time'     => Carbon::now()->toDateTimeString(),
-            'payloads' => $payload
+            'payloads' => $query->get()->map(function (Event $item) use ($request) {
+                $item->setAttribute('delay', $item->delay($request->get('time')));
+
+                return $item;
+            })
         ]);
     }
 }
