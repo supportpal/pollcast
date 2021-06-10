@@ -1,0 +1,43 @@
+{
+    "name": "supportpal/pollcast",
+    "description": "Laravel broadcasting driver suitable for restricted hosting environments.",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kieran Brahney",
+            "email": "kieran@supportpal.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.2.5",
+        "illuminate/support": "^6.0|^7.0|^8.0",
+        "illuminate/database": "^6.0|^7.0|^8.0"
+    },
+    "require-dev": {
+        "graham-campbell/testbench": "^5.4",
+        "phpstan/phpstan": "^0.12.89",
+        "phpunit/phpunit": "^8.0",
+        "supportpal/coding-standard": "^0.4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SupportPal\\Pollcast\\": "src"
+        }
+    },
+    "config": {
+        "preferred-install": "dist",
+        "secure-http": false,
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "platform": {
+            "php": "7.2.5"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "stan:analyse": "./vendor/bin/phpstan analyse",
+        "lint:analyse": "./vendor/bin/phpcs --standard=phpcs.xml .",
+        "lint:fix": "./vendor/bin/phpcbf --standard=phpcs.xml ."
+    }
+}
