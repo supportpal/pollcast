@@ -9,7 +9,7 @@ class ServiceProvider extends BaseServiceProvider
 {
     public function boot(BroadcastManager $manager): void
     {
-        $manager->extend('polycast', function () {
+        $manager->extend('pollcast', function () {
             return new PollcastBroadcaster;
         });
 
