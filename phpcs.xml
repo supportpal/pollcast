@@ -7,4 +7,8 @@
     <file>tests</file>
 
     <rule ref="vendor/supportpal/coding-standard" />
+
+    <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+        <exclude-pattern>database/migrations/</exclude-pattern>
+    </rule>
 </ruleset>
