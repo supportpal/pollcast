@@ -16,11 +16,5 @@ class PollcastServiceProvider extends ServiceProvider
 
         $this->loadRoutesFrom(__DIR__.'/Http/routes.php');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-        $this->loadAssetsFrom(__DIR__.'/../public');
-    }
-
-    protected function loadAssetsFrom(string $path): void
-    {
-        $this->publishes([$path => public_path('vendor/pollcast')], 'public');
     }
 }
