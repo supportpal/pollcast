@@ -10,11 +10,14 @@
     ],
     "require": {
         "php": ">=7.2.5",
-        "illuminate/support": "^6.0|^7.0|^8.0",
-        "illuminate/database": "^6.0|^7.0|^8.0"
+        "illuminate/broadcasting": "^6.0|^7.0|^8.0",
+        "illuminate/database": "^6.0|^7.0|^8.0",
+        "illuminate/http": "^6.0|^7.0|^8.0",
+        "illuminate/support": "^6.0|^7.0|^8.0"
     },
     "require-dev": {
         "graham-campbell/testbench": "^5.4",
+        "nunomaduro/larastan": "^0.7.6",
         "phpstan/phpstan": "^0.12.89",
         "phpunit/phpunit": "^8.0",
         "supportpal/coding-standard": "^0.4.0"
@@ -22,6 +25,11 @@
     "autoload": {
         "psr-4": {
             "SupportPal\\Pollcast\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
         }
     },
     "config": {
