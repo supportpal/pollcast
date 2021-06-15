@@ -74,9 +74,9 @@ class PollcastBroadcaster extends Broadcaster
         $this->gc();
 
         $event = new Event([
-            'channels' => json_encode($channels),
+            'channels' => $channels,
             'event'    => $event,
-            'payload'  => json_encode($payload),
+            'payload'  => $payload,
         ]);
         $event->save();
     }
