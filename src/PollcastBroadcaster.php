@@ -2,10 +2,10 @@
 
 namespace SupportPal\Pollcast;
 
-use Carbon\Carbon;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Model\Event;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -15,9 +15,6 @@ use function json_encode;
 class PollcastBroadcaster extends Broadcaster
 {
     use UsePusherChannelConventions;
-
-    /** @var int */
-    private $gcMins = 2;
 
     /**
      * Authenticate the incoming request for a given channel.
@@ -71,23 +68,17 @@ class PollcastBroadcaster extends Broadcaster
      */
     public function broadcast(array $channels, $event, array $payload = [])
     {
-        $this->gc();
+        $events = new Collection;
+        foreach ($channels as $channel) {
+            $event = new Event([
+                'channel'    => $channel,
+                'event'      => $event,
+                'payload'    => $payload,
+            ]);
 
-        $event = new Event([
-            'channels' => $channels,
-            'event'    => $event,
-            'payload'  => $payload,
-        ]);
-        $event->save();
-    }
+            $events->push($event->touchTimestamps()->getAttributes());
+        }
 
-    /**
-     * Garbage collection for old events.
-     */
-    protected function gc(): void
-    {
-        Event::query()
-            ->where('created_at', '<', Carbon::now()->subMinutes($this->gcMins)->toDateTimeString())
-            ->delete();
+        Event::insert($events->toArray());
     }
 }

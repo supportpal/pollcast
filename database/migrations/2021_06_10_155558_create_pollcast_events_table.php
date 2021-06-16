@@ -19,7 +19,7 @@ class CreatePollcastEventsTable extends Migration
         Schema::create($this->table, function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->text('channels');
+            $table->text('channel');
             $table->text('event');
             $table->text('payload');
             $table->timestamps();

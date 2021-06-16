@@ -9,22 +9,18 @@ use SupportPal\Pollcast\Model\Event;
 
 class PollcastController
 {
-    public function connect(): JsonResponse
-    {
-        return new JsonResponse([
-            'status' => 'success',
-            'time'   => Carbon::now()->toDateTimeString()
-        ]);
-    }
-
     public function receive(ReceiveRequest $request): JsonResponse
     {
+        $this->gc();
+
+        $time = Carbon::now()->toDateTimeString();
+
         $query = Event::query()->select('*');
         foreach ($request->get('channels') as $channel => $events) {
             foreach ($events as $event) {
                 $query->orWhere(function ($query) use ($channel, $event, $request) {
-                    $query->where('channels', 'like', '%"'.$channel.'"%')
-                        ->where('event', '=', $event)
+                    $query->where('channel', $channel)
+                        ->where('event', $event)
                         ->where('created_at', '>=', $request->get('time'));
                 });
             }
@@ -32,12 +28,18 @@ class PollcastController
 
         return new JsonResponse([
             'status' => 'success',
-            'time'   => Carbon::now()->toDateTimeString(),
-            'events' => $query->get()->map(function (Event $item) use ($request) {
-                $item->setAttribute('delay', $item->delay($request->get('time')));
-
-                return $item;
-            })
+            'time'   => $time,
+            'events' => $query->get()
         ]);
+    }
+
+    /**
+     * Garbage collection for old events.
+     */
+    protected function gc(): void
+    {
+        Event::query()
+            ->where('created_at', '<', Carbon::now()->subMinutes(2)->toDateTimeString())
+            ->delete();
     }
 }
