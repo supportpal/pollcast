@@ -2,13 +2,25 @@
 
 namespace SupportPal\Pollcast\Http\Controller;
 
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Event;
 
+use function hash;
+
 class PollcastController
 {
+    public function connect(Session $session): JsonResponse
+    {
+        return new JsonResponse([
+            'status' => 'success',
+            'id'     => hash('sha256', $session->getId()),
+            'time'   => Carbon::now()->toDateTimeString()
+        ]);
+    }
+
     public function receive(ReceiveRequest $request): JsonResponse
     {
         $this->gc();
