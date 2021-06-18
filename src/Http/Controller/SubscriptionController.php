@@ -2,12 +2,12 @@
 
 namespace SupportPal\Pollcast\Http\Controller;
 
-use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Model\User;
@@ -16,12 +16,12 @@ use function sprintf;
 
 class SubscriptionController
 {
-    /** @var string */
-    private $id;
+    /** @var Socket */
+    private $socket;
 
-    public function __construct(Session $session)
+    public function __construct(Socket $socket)
     {
-        $this->id = $session->getId();
+        $this->socket = $socket;
     }
 
     /**
@@ -65,20 +65,22 @@ class SubscriptionController
 
     protected function updateLastActiveTime(): void
     {
-        User::query()->where('socket_id', $this->id)->update(['updated_at' => Date::now()]);
+        User::query()
+            ->where('socket_id', $this->socket->id())
+            ->update(['updated_at' => Date::now()]);
     }
 
     protected function getAuthorisedChannels(): Collection
     {
         return User::query()
-            ->where('socket_id', $this->id)
+            ->where('socket_id', $this->socket->id())
             ->join('pollcast_channel', 'channel_id', '=', 'pollcast_channel.id')
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
 
     protected function getMessagesForRequest(Request $request, Collection $channels): Collection
     {
-        $user = User::query()->where('socket_id', $this->id)->firstOrFail();
+        $user = User::query()->where('socket_id', $this->socket->id())->firstOrFail();
         $messages = Message::query()->orWhere('member_id', $user->id);
 
         $channels->each(function (string $name, int $id) use ($request, $messages) {

@@ -4,10 +4,10 @@ namespace SupportPal\Pollcast\Http\Controller;
 
 use Illuminate\Broadcasting\BroadcastController;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
-use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\SubscribeRequest;
 use SupportPal\Pollcast\Http\Request\UnsubscribeRequest;
 use SupportPal\Pollcast\Model\Channel;
@@ -20,19 +20,19 @@ class ChannelController extends BroadcastController
 {
     use UsePusherChannelConventions;
 
-    /** @var Session */
-    private $session;
+    /** @var Socket */
+    private $socket;
 
-    public function __construct(Session $session)
+    public function __construct(Socket $socket)
     {
-        $this->session = $session;
+        $this->socket = $socket;
     }
 
     public function connect(): JsonResponse
     {
         return new JsonResponse([
             'status' => 'success',
-            'id'     => $this->session->getId(),
+            'id'     => $this->socket->create()->id(),
             'time'   => Carbon::now()->toDateTimeString()
         ]);
     }
@@ -51,8 +51,8 @@ class ChannelController extends BroadcastController
         $channel = Channel::query()->firstOrCreate(['name' => $request->channel_name]);
         $user = User::query()->firstOrCreate([
             'channel_id' => $channel->id,
-            'socket_id' => $this->session->getId(),
-            'data'      => $data['channel_data'] ?? null,
+            'socket_id'  => $this->socket->id(),
+            'data'       => $data['channel_data'] ?? null,
         ]);
 
         if (isset($data['channel_data'])) {
@@ -81,7 +81,7 @@ class ChannelController extends BroadcastController
 
         $user = User::query()
             ->where('channel_id', $channel->id)
-            ->where('socket_id', $this->session->getId())
+            ->where('socket_id', $this->socket->id())
             ->firstOrFail();
 
         $user->delete();

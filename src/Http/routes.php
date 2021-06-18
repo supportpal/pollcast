@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use SupportPal\Pollcast\Http\Middleware\VerifySocketId;
 
 Route::group([
     'prefix' => 'pollcast',
@@ -12,23 +13,25 @@ Route::group([
         'uses' => 'ChannelController@connect',
     ]);
 
-    Route::post('channel/subscribe', [
-        'as'   => 'supportpal.pollcast.subscribe',
-        'uses' => 'ChannelController@subscribe',
-    ]);
+    Route::group(['middleware' => [VerifySocketId::class]], function () {
+        Route::post('channel/subscribe', [
+            'as' => 'supportpal.pollcast.subscribe',
+            'uses' => 'ChannelController@subscribe',
+        ]);
 
-    Route::post('channel/unsubscribe', [
-        'as'   => 'supportpal.pollcast.unsubscribe',
-        'uses' => 'ChannelController@unsubscribe',
-    ]);
+        Route::post('channel/unsubscribe', [
+            'as' => 'supportpal.pollcast.unsubscribe',
+            'uses' => 'ChannelController@unsubscribe',
+        ]);
 
-    Route::post('subscribe/messages', [
-        'as'   => 'supportpal.pollcast.receive',
-        'uses' => 'SubscriptionController@messages',
-    ]);
+        Route::post('subscribe/messages', [
+            'as' => 'supportpal.pollcast.receive',
+            'uses' => 'SubscriptionController@messages',
+        ]);
 
-    Route::post('publish', [
-        'as'   => 'supportpal.pollcast.publish',
-        'uses' => 'PublishController@publish',
-    ]);
+        Route::post('publish', [
+            'as' => 'supportpal.pollcast.publish',
+            'uses' => 'PublishController@publish',
+        ]);
+    });
 });
