@@ -6,6 +6,7 @@ use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -70,8 +71,10 @@ class PollcastBroadcaster extends Broadcaster
     {
         $events = new Collection;
         foreach ($channels as $channel) {
+            $channel = Channel::query()->firstOrCreate(['name' => $channel]);
+
             $event = new Message([
-                'channel'    => $channel,
+                'channel_id' => $channel->id,
                 'event'      => $event,
                 'payload'    => $payload,
             ]);
