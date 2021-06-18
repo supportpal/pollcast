@@ -2,7 +2,11 @@
 
 namespace SupportPal\Pollcast\Model;
 
+use Illuminate\Broadcasting\Channel as PublicChannel;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 use function is_string;
@@ -33,7 +37,15 @@ class Channel extends Model
      */
     protected function normalizeNameAttribute($value): string
     {
-        if ($value instanceof \Illuminate\Broadcasting\Channel) {
+        if ($value instanceof PresenceChannel) {
+            return 'presence-' . $value->name;
+        }
+
+        if ($value instanceof PrivateChannel) {
+            return 'private-' . $value->name;
+        }
+
+        if ($value instanceof PublicChannel) {
             return $value->name;
         }
 
