@@ -11,12 +11,13 @@ class User extends Model
     protected $table = 'pollcast_channel_members';
 
     /** @var string[] */
-    protected $fillable = ['channel_id', 'socket_id'];
+    protected $fillable = ['channel_id', 'socket_id', 'data'];
 
     /** @var string[] */
     protected $casts = [
         'channel_id' => 'int',
         'socket_id'  => 'string',
+        'data'       => 'json',
     ];
 
     public function channel(): BelongsTo

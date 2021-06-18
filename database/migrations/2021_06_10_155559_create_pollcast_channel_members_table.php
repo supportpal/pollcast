@@ -25,6 +25,7 @@ class CreatePollcastChannelMembersTable extends Migration
             $table->unsignedBigInteger('channel_id');
             $table->foreign('channel_id')->references('id')->on('pollcast_channel')->cascadeOnDelete();
             $table->string('socket_id')->index();
+            $table->text('data')->nullable();
             $table->timestamps();
 
             $table->index('created_at');

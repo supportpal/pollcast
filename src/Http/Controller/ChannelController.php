@@ -6,15 +6,15 @@ use Illuminate\Broadcasting\BroadcastController;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use SupportPal\Pollcast\Http\Request\SubscribeRequest;
+use SupportPal\Pollcast\Http\Request\UnsubscribeRequest;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Model\User;
 
-use function array_filter;
-use function strcasecmp;
+use function json_decode;
 
 class ChannelController extends BroadcastController
 {
@@ -40,44 +40,59 @@ class ChannelController extends BroadcastController
     /**
      * @return JsonResponse|Response
      */
-    public function subscribe(Request $request)
+    public function subscribe(SubscribeRequest $request)
     {
         if ($this->isGuardedChannel($request->channel_name)) {
-            $response = parent::authenticate($request);
+            /** @var string $data */
+            $data = parent::authenticate($request);
+            $data = json_decode($data, true);
         }
 
         $channel = Channel::query()->firstOrCreate(['name' => $request->channel_name]);
-        $user = User::query()->firstOrCreate(['channel_id' => $channel->id, 'socket_id' => $this->session->getId()]);
+        $user = User::query()->firstOrCreate([
+            'channel_id' => $channel->id,
+            'socket_id' => $this->session->getId(),
+            'data'      => $data['channel_data'] ?? null,
+        ]);
 
-        if ($this->isGuardedChannel($request->channel_name)) {
+        if (isset($data['channel_data'])) {
             // Broadcast subscription succeeded event to the user.
             (new Message([
                 'channel_id' => $channel->id,
                 'member_id'  => $user->id,
                 'event'      => 'pollcast:subscription_succeeded',
-                'payload'    => null, // todo all users in the channel
+                'payload'    => User::query()->where('channel_id', $channel->id)->pluck('data'),
             ]))->save();
 
             // Broadcast member added event to everyone in the channel.
             (new Message([
                 'channel_id' => $channel->id,
                 'event'      => 'pollcast:member_added',
-                'payload'    => null, // todo info on user who joined
-            ]));
+                'payload'    => $data['channel_data'],
+            ]))->save();
         }
 
-        return $response ?? new JsonResponse(['true']);
+        return new JsonResponse(true);
     }
 
-    public function unsubscribe(Request $request): JsonResponse
+    public function unsubscribe(UnsubscribeRequest $request): JsonResponse
     {
-        $channels = array_filter($this->session->get('channels', []), function ($channel) use ($request) {
-            return strcasecmp($channel, $request->channel_name) === 0;
-        });
+        $channel = Channel::query()->where('name', $request->channel_name)->firstOrFail();
 
-        $this->session->put('channels', $channels);
+        $user = User::query()
+            ->where('channel_id', $channel->id)
+            ->where('socket_id', $this->session->getId())
+            ->firstOrFail();
 
-        // todo broadcast 'pollcast:member_removed' to everyone, with info on user who left
+        $user->delete();
+
+        if ($this->isGuardedChannel($request->channel_name)) {
+            (new Message([
+                'channel_id' => $channel->id,
+                'event'      => 'pollcast:member_removed',
+                'payload'    => $user->data,
+            ]))->save();
+        }
 
         return new JsonResponse([true]);
     }

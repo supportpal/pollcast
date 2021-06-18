@@ -59,10 +59,8 @@ class SubscriptionController
             ->where('created_at', '<', Carbon::now()->subSeconds(30)->toDateTimeString())
             ->delete();
 
-        // Delete users who are no longer active in the channel.
-        User::query()
-            ->where('updated_at', '<', Carbon::now()->subSeconds(30)->toDateTimeString())
-            ->delete();
+        // todo Delete users who are no longer active in the channel.
+        // broadcast pollcast:member_removed
     }
 
     protected function updateLastActiveTime(): void
@@ -80,7 +78,9 @@ class SubscriptionController
 
     protected function getMessagesForRequest(Request $request, Collection $channels): Collection
     {
-        $messages = Message::query()->orWhere('socket_id', $this->id);
+        $user = User::query()->where('socket_id', $this->id)->firstOrFail();
+        $messages = Message::query()->orWhere('member_id', $user->id);
+
         $channels->each(function (string $name, int $id) use ($request, $messages) {
             // Get requested events.
             // If they ask for a channel they're not authorised to view then we'll ignore it.
