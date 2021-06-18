@@ -6,7 +6,7 @@ use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use SupportPal\Pollcast\Model\Event;
+use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 use function is_bool;
@@ -70,7 +70,7 @@ class PollcastBroadcaster extends Broadcaster
     {
         $events = new Collection;
         foreach ($channels as $channel) {
-            $event = new Event([
+            $event = new Message([
                 'channel'    => $channel,
                 'event'      => $event,
                 'payload'    => $payload,
@@ -79,6 +79,6 @@ class PollcastBroadcaster extends Broadcaster
             $events->push($event->touchTimestamps()->getAttributes());
         }
 
-        Event::insert($events->toArray());
+        Message::insert($events->toArray());
     }
 }
