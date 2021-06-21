@@ -86,7 +86,7 @@ class SubscriptionController
         $channels->each(function (string $name, int $id) use ($request, $messages) {
             // Get requested events.
             // If they ask for a channel they're not authorised to view then we'll ignore it.
-            $events = $request->get(sprintf('channels.%s', $name), []);
+            $events = $request->input(sprintf('channels.%s', $name), []);
 
             foreach ($events as $event) {
                 $messages->orWhere(function ($query) use ($id, $event, $request) {
