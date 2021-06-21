@@ -32,7 +32,6 @@ class ChannelController extends BroadcastController
     {
         return new JsonResponse([
             'status' => 'success',
-            'id'     => $this->socket->id(),
             'time'   => Carbon::now()->toDateTimeString()
         ]);
     }
@@ -49,6 +48,8 @@ class ChannelController extends BroadcastController
         }
 
         $channel = Channel::query()->firstOrCreate(['name' => $request->channel_name]);
+        $channel->touch();
+
         $user = User::query()->firstOrCreate([
             'channel_id' => $channel->id,
             'socket_id'  => $this->socket->id(),
@@ -77,22 +78,16 @@ class ChannelController extends BroadcastController
 
     public function unsubscribe(UnsubscribeRequest $request): JsonResponse
     {
+        /** @var Channel $channel */
         $channel = Channel::query()->where('name', $request->channel_name)->firstOrFail();
 
+        /** @var User $user */
         $user = User::query()
             ->where('channel_id', $channel->id)
             ->where('socket_id', $this->socket->id())
             ->firstOrFail();
 
-        $user->delete();
-
-        if ($this->isGuardedChannel($request->channel_name)) {
-            (new Message([
-                'channel_id' => $channel->id,
-                'event'      => 'pollcast:member_removed',
-                'payload'    => $user->data,
-            ]))->save();
-        }
+        $this->socket->removeUserFromChannel($user, $channel);
 
         return new JsonResponse([true]);
     }

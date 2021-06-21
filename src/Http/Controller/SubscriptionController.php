@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
+use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Model\User;
 
@@ -55,13 +56,20 @@ class SubscriptionController
      */
     protected function gc(): void
     {
-        // Delete old messages.
         Message::query()
-            ->where('created_at', '<', Carbon::now()->subSeconds(30)->toDateTimeString())
+            ->where('created_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
             ->delete();
 
-        // todo Delete users who are no longer active in the channel.
-        // broadcast pollcast:member_removed
+        User::query()
+            ->with('channel')
+            ->where('updated_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
+            ->each(function (User $user) {
+                /** @var Channel $channel */
+                $channel = $user->channel;
+                $this->socket->removeUserFromChannel($user, $channel);
+            });
+
+        Channel::query()->where('update_at', '<', Carbon::now()->subDay()->toDateTimeString());
     }
 
     protected function updateLastActiveTime(): void
