@@ -69,7 +69,7 @@ class SubscriptionController
                 $this->socket->removeUserFromChannel($user, $channel);
             });
 
-        Channel::query()->where('update_at', '<', Carbon::now()->subDay()->toDateTimeString());
+        Channel::query()->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString());
     }
 
     protected function updateLastActiveTime(): void
