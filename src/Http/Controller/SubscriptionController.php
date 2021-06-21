@@ -81,7 +81,10 @@ class SubscriptionController
     protected function getMessagesForRequest(Request $request, Collection $channels): Collection
     {
         $user = User::query()->where('socket_id', $this->socket->id())->firstOrFail();
-        $messages = Message::query()->orWhere('member_id', $user->id);
+
+        $messages = Message::query()
+            ->with('channel')
+            ->orWhere('member_id', $user->id);
 
         $channels->each(function (string $name, int $id) use ($request, $messages) {
             // Get requested events.
