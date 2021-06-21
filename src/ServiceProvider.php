@@ -11,7 +11,7 @@ class ServiceProvider extends BaseServiceProvider
     public function boot(BroadcastManager $manager): void
     {
         $manager->extend('pollcast', function ($app) {
-            $socket = new Socket($app['request']->session());
+            $socket = new Socket($app['session.store']);
 
             return new PollcastBroadcaster($socket);
         });
