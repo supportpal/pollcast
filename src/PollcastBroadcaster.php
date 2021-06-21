@@ -12,7 +12,6 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-use function is_bool;
 use function json_encode;
 
 class PollcastBroadcaster extends Broadcaster
@@ -60,10 +59,6 @@ class PollcastBroadcaster extends Broadcaster
      */
     public function validAuthenticationResponse($request, $result)
     {
-        if (is_bool($result)) {
-            return json_encode($result);
-        }
-
         $channelName = $this->normalizeChannelName($request->channel_name);
 
         return json_encode([
