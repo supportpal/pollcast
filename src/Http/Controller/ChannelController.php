@@ -5,16 +5,16 @@ namespace SupportPal\Pollcast\Http\Controller;
 use Illuminate\Broadcasting\BroadcastController;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Response;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Broadcast;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\SubscribeRequest;
 use SupportPal\Pollcast\Http\Request\UnsubscribeRequest;
 use SupportPal\Pollcast\Model\Channel;
-use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Model\User;
-
-use function json_decode;
+use Symfony\Component\Finder\Exception\AccessDeniedException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class ChannelController extends BroadcastController
 {
@@ -37,43 +37,22 @@ class ChannelController extends BroadcastController
     }
 
     /**
-     * @return JsonResponse|Response
+     * @return JsonResponse
      */
     public function subscribe(SubscribeRequest $request)
     {
-        if ($this->isGuardedChannel($request->channel_name)) {
-            /** @var string $data */
-            $data = parent::authenticate($request);
-            $data = json_decode($data, true);
+        try {
+            $channel = $request->channel_name;
+            if ($this->isGuardedChannel($channel)) {
+                $authUser = Broadcast::auth($request);
+            }
+
+            $this->socket->joinChannel($channel, $authUser ?? null);
+
+            return new JsonResponse(true);
+        } catch (AccessDeniedHttpException $e) {
+            $this->removeUnauthenticatedUser($request, $e);
         }
-
-        $channel = Channel::query()->firstOrCreate(['name' => $request->channel_name]);
-        $channel->touch();
-
-        $user = User::query()->firstOrCreate([
-            'channel_id' => $channel->id,
-            'socket_id'  => $this->socket->id(),
-            'data'       => $data['channel_data'] ?? null,
-        ]);
-
-        if (isset($data['channel_data'])) {
-            // Broadcast subscription succeeded event to the user.
-            (new Message([
-                'channel_id' => $channel->id,
-                'member_id'  => $user->id,
-                'event'      => 'pollcast:subscription_succeeded',
-                'payload'    => User::query()->where('channel_id', $channel->id)->pluck('data'),
-            ]))->save();
-
-            // Broadcast member added event to everyone in the channel.
-            (new Message([
-                'channel_id' => $channel->id,
-                'event'      => 'pollcast:member_added',
-                'payload'    => $data['channel_data'],
-            ]))->save();
-        }
-
-        return new JsonResponse(true);
     }
 
     public function unsubscribe(UnsubscribeRequest $request): JsonResponse
@@ -90,5 +69,27 @@ class ChannelController extends BroadcastController
         $this->socket->removeUserFromChannel($user, $channel);
 
         return new JsonResponse([true]);
+    }
+
+    /**
+     * @throws AccessDeniedException
+     */
+    protected function removeUnauthenticatedUser(Request $request, AccessDeniedHttpException $e): void
+    {
+        /** @var Channel|null $channel */
+        $channel = Channel::query()->where('name', $request->channel_name)->first();
+        if ($channel === null) {
+            throw $e;
+        }
+
+        /** @var User|null $user */
+        $user = User::query()->where('channel_id', $channel->id)->where('socket_id', $this->socket->id())->first();
+        if ($user === null) {
+            throw $e;
+        }
+
+        $this->socket->removeUserFromChannel($user, $channel);
+
+        throw $e;
     }
 }

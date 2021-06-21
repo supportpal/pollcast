@@ -12,8 +12,6 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-use function json_encode;
-
 class PollcastBroadcaster extends Broadcaster
 {
     use UsePusherChannelConventions;
@@ -55,18 +53,17 @@ class PollcastBroadcaster extends Broadcaster
      *
      * @param mixed|Request $request
      * @param mixed $result
-     * @return string|false
+     * @return mixed[]
      */
     public function validAuthenticationResponse($request, $result)
     {
         $channelName = $this->normalizeChannelName($request->channel_name);
+        $user        = $this->retrieveUser($request, $channelName);
 
-        return json_encode([
-            'channel_data' => [
-                'user_id' => $this->retrieveUser($request, $channelName)->getAuthIdentifier(),
-                'user_info' => $result,
-            ]
-        ]);
+        return [
+            'user_id'   => $user->getAuthIdentifier(),
+            'user_info' => $user,
+        ];
     }
 
     /**
