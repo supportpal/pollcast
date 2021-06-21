@@ -91,26 +91,28 @@ class SubscriptionController
     {
         $user = User::query()->where('socket_id', $this->socket->id())->firstOrFail();
 
-        $messages = Message::query()
+        return Message::query()
             ->with('channel')
-            ->orWhere('member_id', $user->id);
+            ->where('created_at', '>=', $request->get('time'))
+            ->where(function ($query) use ($user, $channels, $request) {
+                $query->orWhere('member_id', $user->id);
 
-        $channels->each(function (string $name, int $id) use ($request, $messages) {
-            // Get requested events.
-            // If they ask for a channel they're not authorised to view then we'll ignore it.
-            $events = $request->input(sprintf('channels.%s', $name), []);
+                $channels->each(function (string $name, int $id) use ($request, $query) {
+                    // Get requested events.
+                    // If they ask for a channel they're not authorised to view then we'll ignore it.
+                    $events = $request->input(sprintf('channels.%s', $name), []);
 
-            foreach ($events as $event) {
-                $messages->orWhere(function ($query) use ($id, $event, $request) {
-                    $query->where('channel_id', $id)
-                        ->where('event', $event)
-                        ->where('created_at', '>=', $request->get('time'));
+                    foreach ($events as $event) {
+                        $query->orWhere(function ($query) use ($id, $event) {
+                            $query->where('channel_id', $id)->where('event', $event);
+                        });
+                    }
                 });
-            }
-        });
-
-        return $messages->get()->filter(function (Message $message) {
-            return Arr::get($message->payload, 'socket') !== $this->socket->id();
-        });
+            })
+            ->get()
+            // Remove events triggered by the same user (prevent unnecessary events).
+            ->filter(function (Message $message) {
+                return Arr::get($message->payload, 'socket') !== $this->socket->id();
+            });
     }
 }
