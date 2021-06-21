@@ -32,7 +32,7 @@ class ChannelController extends BroadcastController
     {
         return new JsonResponse([
             'status' => 'success',
-            'id'     => $this->socket->create()->id(),
+            'id'     => $this->socket->id(),
             'time'   => Carbon::now()->toDateTimeString()
         ]);
     }

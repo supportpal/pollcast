@@ -18,16 +18,21 @@ class Socket
         $this->session = $session;
     }
 
-    public function create(): self
+    public function id(): ?string
     {
-        if ($this->id() === null) {
+        return $this->create()->getId();
+    }
+
+    protected function create(): self
+    {
+        if ($this->getId() === null) {
             $this->session->put(self::UUID, uniqid('pollcast-', true));
         }
 
         return $this;
     }
 
-    public function id(): ?string
+    protected function getId(): ?string
     {
         return $this->session->get(self::UUID);
     }

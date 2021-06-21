@@ -4,6 +4,7 @@ namespace SupportPal\Pollcast\Http\Controller;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Date;
@@ -100,6 +101,8 @@ class SubscriptionController
             }
         });
 
-        return $messages->get();
+        return $messages->get()->filter(function (Message $message) {
+            return Arr::get($message->payload, 'socket') !== $this->socket->id();
+        });
     }
 }

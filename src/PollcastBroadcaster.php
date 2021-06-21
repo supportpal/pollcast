@@ -5,7 +5,9 @@ namespace SupportPal\Pollcast;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -16,6 +18,19 @@ use function json_encode;
 class PollcastBroadcaster extends Broadcaster
 {
     use UsePusherChannelConventions;
+
+    /** @var Socket */
+    private $socket;
+
+    /**
+     * PollcastBroadcaster constructor.
+     *
+     * @param Socket $socket
+     */
+    public function __construct(Socket $socket)
+    {
+        $this->socket = $socket;
+    }
 
     /**
      * Authenticate the incoming request for a given channel.
@@ -69,6 +84,10 @@ class PollcastBroadcaster extends Broadcaster
      */
     public function broadcast(array $channels, $event, array $payload = [])
     {
+        if (Arr::get($payload, 'socket') === null) {
+            $payload['socket'] = $this->socket->id();
+        }
+
         $events = new Collection;
         foreach ($channels as $channel) {
             $channel = Channel::query()->firstOrCreate(['name' => $channel]);
