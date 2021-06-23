@@ -13,7 +13,7 @@
 
 # Pollcast
 
-Pollcast is short for XHR polling using Laravel Broadcasting.
+"Pollcast" is short for XHR polling using Laravel Broadcasting.
 
 ## Motivation
 
