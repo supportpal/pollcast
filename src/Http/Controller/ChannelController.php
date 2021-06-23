@@ -58,7 +58,9 @@ class ChannelController extends BroadcastController
     public function unsubscribe(UnsubscribeRequest $request): JsonResponse
     {
         /** @var Channel $channel */
-        $channel = Channel::query()->where('name', $request->channel_name)->firstOrFail();
+        $channel = Channel::query()
+            ->where('name', $request->channel_name)
+            ->firstOrFail();
 
         /** @var User $user */
         $user = User::query()
@@ -77,13 +79,18 @@ class ChannelController extends BroadcastController
     protected function removeUnauthenticatedUser(Request $request, AccessDeniedHttpException $e): void
     {
         /** @var Channel|null $channel */
-        $channel = Channel::query()->where('name', $request->channel_name)->first();
+        $channel = Channel::query()
+            ->where('name', $request->channel_name)
+            ->first();
         if ($channel === null) {
             throw $e;
         }
 
         /** @var User|null $user */
-        $user = User::query()->where('channel_id', $channel->id)->where('socket_id', $this->socket->id())->first();
+        $user = User::query()
+            ->where('channel_id', $channel->id)
+            ->where('socket_id', $this->socket->id())
+            ->first();
         if ($user === null) {
             throw $e;
         }

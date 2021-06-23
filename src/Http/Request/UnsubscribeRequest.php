@@ -1,8 +1,6 @@
 <?php
 
-
 namespace SupportPal\Pollcast\Http\Request;
-
 
 use Illuminate\Foundation\Http\FormRequest;
 

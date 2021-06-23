@@ -89,7 +89,9 @@ class SubscriptionController
 
     protected function getMessagesForRequest(Request $request, Collection $channels): Collection
     {
-        $user = User::query()->where('socket_id', $this->socket->id())->firstOrFail();
+        $user = User::query()
+            ->where('socket_id', $this->socket->id())
+            ->firstOrFail();
 
         return Message::query()
             ->with('channel')

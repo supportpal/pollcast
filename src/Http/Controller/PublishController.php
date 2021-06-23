@@ -14,7 +14,9 @@ class PublishController
      */
     public function publish(PublishRequest $request): JsonResponse
     {
-        $channel = Channel::query()->where('name', $request->channel_name)->firstOrFail();
+        $channel = Channel::query()
+            ->where('name', $request->channel_name)
+            ->firstOrFail();
 
         (new Message([
             'channel_id' => $channel->id,
