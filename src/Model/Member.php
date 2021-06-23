@@ -5,6 +5,12 @@ namespace SupportPal\Pollcast\Model;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read int $id
+ * @property-read int $channel_id
+ * @property-read string $socket_id
+ * @property-read mixed[] $data
+ */
 class Member extends Model
 {
     /** @var string */

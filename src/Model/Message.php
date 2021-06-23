@@ -6,6 +6,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read int $id
+ * @property-read int $channel_id
+ * @property-read int $member_id
+ * @property-read string $event
+ * @property-read mixed[] $payload
+ */
 class Message extends Model
 {
     /** @var string */
