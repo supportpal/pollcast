@@ -21,9 +21,9 @@ class CreatePollcastMessageQueueTable extends Migration
 
             $table->bigIncrements('id');
             $table->unsignedBigInteger('channel_id');
-            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->cascadeOnDelete();
+            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->onDelete('cascade');
             $table->unsignedBigInteger('member_id')->nullable();
-            $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->cascadeOnDelete();
+            $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->onDelete('cascade');
             $table->text('event');
             $table->text('payload');
             $table->timestamps();
