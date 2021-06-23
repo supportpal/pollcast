@@ -10,6 +10,10 @@ use InvalidArgumentException;
 
 use function is_string;
 
+/**
+ * @property-read int $id
+ * @property-read string $name
+ */
 class Channel extends Model
 {
     /** @var string */

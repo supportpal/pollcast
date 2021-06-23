@@ -36,10 +36,7 @@ class ChannelController extends BroadcastController
         ]);
     }
 
-    /**
-     * @return JsonResponse
-     */
-    public function subscribe(SubscribeRequest $request)
+    public function subscribe(SubscribeRequest $request): JsonResponse
     {
         try {
             $channel = $request->channel_name;
@@ -52,6 +49,8 @@ class ChannelController extends BroadcastController
             return new JsonResponse(true);
         } catch (AccessDeniedHttpException $e) {
             $this->removeUnauthenticatedMember($request, $e);
+
+            throw $e;
         }
     }
 
