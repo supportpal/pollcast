@@ -5,8 +5,8 @@ namespace SupportPal\Pollcast\Broadcasting;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Contracts\Session\Session;
 use SupportPal\Pollcast\Model\Channel;
-use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Model\Member;
+use SupportPal\Pollcast\Model\Message;
 
 use function uniqid;
 

@@ -11,10 +11,8 @@ use Illuminate\Support\Facades\Date;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Channel;
-use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Model\Member;
-
-use function sprintf;
+use SupportPal\Pollcast\Model\Message;
 
 class SubscriptionController
 {

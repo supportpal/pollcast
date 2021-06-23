@@ -6,7 +6,6 @@ use Illuminate\Broadcasting\Channel as PublicChannel;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 use function is_string;
