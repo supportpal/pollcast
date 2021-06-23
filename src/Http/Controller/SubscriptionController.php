@@ -12,7 +12,7 @@ use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
-use SupportPal\Pollcast\Model\User;
+use SupportPal\Pollcast\Model\Member;
 
 use function sprintf;
 
@@ -60,13 +60,13 @@ class SubscriptionController
             ->where('created_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
             ->delete();
 
-        User::query()
+        Member::query()
             ->with('channel')
             ->where('updated_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
-            ->each(function (User $user) {
+            ->each(function (Member $member) {
                 /** @var Channel $channel */
-                $channel = $user->channel;
-                $this->socket->removeUserFromChannel($user, $channel);
+                $channel = $member->channel;
+                $this->socket->removeMemberFromChannel($member, $channel);
             });
 
         Channel::query()->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString());
@@ -74,14 +74,14 @@ class SubscriptionController
 
     protected function updateLastActiveTime(): void
     {
-        User::query()
+        Member::query()
             ->where('socket_id', $this->socket->id())
             ->update(['updated_at' => Date::now()]);
     }
 
     protected function getAuthorisedChannels(): Collection
     {
-        return User::query()
+        return Member::query()
             ->where('socket_id', $this->socket->id())
             ->join('pollcast_channel', 'channel_id', '=', 'pollcast_channel.id')
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
@@ -89,15 +89,15 @@ class SubscriptionController
 
     protected function getMessagesForRequest(Request $request, Collection $channels): Collection
     {
-        $user = User::query()
+        $member = Member::query()
             ->where('socket_id', $this->socket->id())
             ->firstOrFail();
 
         return Message::query()
             ->with('channel')
             ->where('created_at', '>=', $request->get('time'))
-            ->where(function ($query) use ($user, $channels, $request) {
-                $query->orWhere('member_id', $user->id);
+            ->where(function ($query) use ($member, $channels, $request) {
+                $query->orWhere('member_id', $member->id);
 
                 $channels->each(function (string $name, int $id) use ($request, $query) {
                     // Get requested events.
@@ -112,7 +112,7 @@ class SubscriptionController
                 });
             })
             ->get()
-            // Remove events triggered by the same user (prevent unnecessary events).
+            // Remove events triggered by the same member (prevent unnecessary events).
             ->filter(function (Message $message) {
                 return Arr::get($message->payload, 'socket') !== $this->socket->id();
             });

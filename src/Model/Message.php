@@ -27,9 +27,9 @@ class Message extends Model
         return $this->belongsTo(Channel::class, 'channel_id', 'id');
     }
 
-    public function user(): BelongsTo
+    public function member(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'member_id', 'id');
+        return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
     public function touchTimestamps(): self

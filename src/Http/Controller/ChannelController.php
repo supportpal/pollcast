@@ -12,7 +12,7 @@ use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\SubscribeRequest;
 use SupportPal\Pollcast\Http\Request\UnsubscribeRequest;
 use SupportPal\Pollcast\Model\Channel;
-use SupportPal\Pollcast\Model\User;
+use SupportPal\Pollcast\Model\Member;
 use Symfony\Component\Finder\Exception\AccessDeniedException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
@@ -44,14 +44,14 @@ class ChannelController extends BroadcastController
         try {
             $channel = $request->channel_name;
             if ($this->isGuardedChannel($channel)) {
-                $authUser = Broadcast::auth($request);
+                $authMember = Broadcast::auth($request);
             }
 
-            $this->socket->joinChannel($channel, $authUser ?? null);
+            $this->socket->joinChannel($channel, $authMember ?? null);
 
             return new JsonResponse(true);
         } catch (AccessDeniedHttpException $e) {
-            $this->removeUnauthenticatedUser($request, $e);
+            $this->removeUnauthenticatedMember($request, $e);
         }
     }
 
@@ -62,13 +62,13 @@ class ChannelController extends BroadcastController
             ->where('name', $request->channel_name)
             ->firstOrFail();
 
-        /** @var User $user */
-        $user = User::query()
+        /** @var Member $member */
+        $member = Member::query()
             ->where('channel_id', $channel->id)
             ->where('socket_id', $this->socket->id())
             ->firstOrFail();
 
-        $this->socket->removeUserFromChannel($user, $channel);
+        $this->socket->removeMemberFromChannel($member, $channel);
 
         return new JsonResponse([true]);
     }
@@ -76,7 +76,7 @@ class ChannelController extends BroadcastController
     /**
      * @throws AccessDeniedException
      */
-    protected function removeUnauthenticatedUser(Request $request, AccessDeniedHttpException $e): void
+    protected function removeUnauthenticatedMember(Request $request, AccessDeniedHttpException $e): void
     {
         /** @var Channel|null $channel */
         $channel = Channel::query()
@@ -86,16 +86,16 @@ class ChannelController extends BroadcastController
             throw $e;
         }
 
-        /** @var User|null $user */
-        $user = User::query()
+        /** @var Member|null $member */
+        $member = Member::query()
             ->where('channel_id', $channel->id)
             ->where('socket_id', $this->socket->id())
             ->first();
-        if ($user === null) {
+        if ($member === null) {
             throw $e;
         }
 
-        $this->socket->removeUserFromChannel($user, $channel);
+        $this->socket->removeMemberFromChannel($member, $channel);
 
         throw $e;
     }

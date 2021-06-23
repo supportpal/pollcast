@@ -5,7 +5,7 @@ namespace SupportPal\Pollcast\Model;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class User extends Model
+class Member extends Model
 {
     /** @var string */
     protected $table = 'pollcast_channel_members';
