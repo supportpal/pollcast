@@ -22,6 +22,6 @@ class Member extends Model
 
     public function channel(): BelongsTo
     {
-        return $this->belongsTo(Channel::class, 'channel_id', 'id');
+        return $this->belongsTo(Channel::class);
     }
 }
