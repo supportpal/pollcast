@@ -51,6 +51,13 @@ class Message extends Model
         return $this->belongsTo(Member::class);
     }
 
+    public function setUuid(): self
+    {
+        $this->{$this->getKeyName()} = $this->generateUuid();
+
+        return $this;
+    }
+
     public function touchTimestamps(): self
     {
         if ($this->usesTimestamps()) {

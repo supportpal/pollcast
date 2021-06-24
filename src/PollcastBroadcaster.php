@@ -7,6 +7,7 @@ use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Ramsey\Uuid\Uuid;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Message;
@@ -90,7 +91,7 @@ class PollcastBroadcaster extends Broadcaster
                 'payload'    => $payload,
             ]);
 
-            $events->push($event->touchTimestamps()->getAttributes());
+            $events->push($event->setUuid()->touchTimestamps()->getAttributes());
         }
 
         Message::insert($events->toArray());
