@@ -99,7 +99,7 @@ class SubscriptionController
             ->where(function ($query) use ($member, $channels, $request) {
                 $query->orWhere('member_id', $member->id);
 
-                $channels->each(function (string $name, int $id) use ($request, $query) {
+                $channels->each(function (string $name, string $id) use ($request, $query) {
                     // Get requested events.
                     // If they ask for a channel they're not authorised to view then we'll ignore it.
                     $events = $request->get('channels', [])[$name] ?? [];
