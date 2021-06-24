@@ -54,6 +54,10 @@ class SubscriptionController
      */
     protected function gc(): void
     {
+        Channel::query()
+            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+            ->delete();
+
         Message::query()
             ->where('created_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
             ->delete();
@@ -66,8 +70,6 @@ class SubscriptionController
                 $channel = $member->channel;
                 $this->socket->removeMemberFromChannel($member, $channel);
             });
-
-        Channel::query()->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString());
     }
 
     protected function updateLastActiveTime(): void
