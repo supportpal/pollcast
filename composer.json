@@ -11,6 +11,7 @@
     "require": {
         "php": ">=7.2.5",
         "ext-json": "*",
+        "goldspecdigital/laravel-eloquent-uuid": "^6.0|^7.0|^8.0",
         "illuminate/broadcasting": "^6.0|^7.0|^8.0",
         "illuminate/database": "^6.0|^7.0|^8.0",
         "illuminate/http": "^6.0|^7.0|^8.0",

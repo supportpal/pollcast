@@ -19,11 +19,14 @@ class CreatePollcastMessageQueueTable extends Migration
         Schema::create($this->table, function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('channel_id');
+            $table->uuid('id')->primary();
+
+            $table->uuid('channel_id');
             $table->foreign('channel_id')->references('id')->on('pollcast_channel')->onDelete('cascade');
-            $table->unsignedBigInteger('member_id')->nullable();
+
+            $table->uuid('member_id')->nullable();
             $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->onDelete('cascade');
+
             $table->text('event');
             $table->text('payload');
             $table->timestamps();

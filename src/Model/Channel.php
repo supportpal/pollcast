@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Model;
 
+use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -10,8 +11,19 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Channel extends Model
 {
+    use Uuid;
+
     /** @var string */
     protected $table = 'pollcast_channel';
+
+    /** @var string */
+    protected $keyType = 'string';
+
+    /** @var bool */
+    public $incrementing = false;
+
+    /** @var string[] */
+    protected $guarded = [];
 
     /** @var string[] */
     protected $fillable = ['name'];

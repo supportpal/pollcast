@@ -3,6 +3,7 @@
 namespace SupportPal\Pollcast\Model;
 
 use Carbon\Carbon;
+use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,16 +16,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Message extends Model
 {
+    use Uuid;
+
     /** @var string */
     protected $table = 'pollcast_message_queue';
+
+    /** @var string */
+    protected $keyType = 'string';
+
+    /** @var bool */
+    public $incrementing = false;
+
+    /** @var string[] */
+    protected $guarded = [];
 
     /** @var string[] */
     protected $fillable = ['channel_id', 'member_id', 'event', 'payload'];
 
     /** @var string[] */
     protected $casts = [
-        'channel_id' => 'int',
-        'member_id'  => 'int',
+        'channel_id' => 'string',
+        'member_id'  => 'string',
         'event'      => 'string',
         'payload'    => 'json',
     ];

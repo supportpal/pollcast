@@ -18,12 +18,12 @@ class CreatePollcastChannelMembersTable extends Migration
     {
         Schema::create($this->table, function (Blueprint $table) {
             $table->engine = 'InnoDB';
-            $table->charset = 'utf8';
-            $table->collation = 'utf8_unicode_ci';
 
-            $table->bigIncrements('id');
-            $table->unsignedBigInteger('channel_id');
+            $table->uuid('id')->primary();
+
+            $table->uuid('channel_id');
             $table->foreign('channel_id')->references('id')->on('pollcast_channel')->onDelete('cascade');
+
             $table->string('socket_id')->index();
             $table->text('data')->nullable();
             $table->timestamps();

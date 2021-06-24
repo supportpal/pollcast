@@ -19,7 +19,7 @@ class CreatePollcastChannelTable extends Migration
         Schema::create($this->table, function (Blueprint $table) {
             $table->engine = 'InnoDB';
 
-            $table->bigIncrements('id');
+            $table->uuid('id')->primary();
             $table->text('name');
             $table->timestamps();
 
