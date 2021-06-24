@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Tests;
+namespace SupportPal\Pollcast\Tests;
 
 use Illuminate\Contracts\Foundation\Application;
 use SupportPal\Pollcast\ServiceProvider;
