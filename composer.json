@@ -22,6 +22,7 @@
         "graham-campbell/testbench": "^5.4",
         "nunomaduro/larastan": "^0.7.6",
         "phpstan/phpstan": "^0.12.89",
+        "phpstan/phpstan-mockery": "^0.12.14",
         "phpunit/phpunit": "^8.0",
         "supportpal/coding-standard": "^0.4.0"
     },
