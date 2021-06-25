@@ -2,7 +2,6 @@
 
 namespace SupportPal\Pollcast\Model;
 
-use Carbon\Carbon;
 use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -65,10 +64,5 @@ class Message extends Model
         }
 
         return $this;
-    }
-
-    public function createdAt(): Carbon
-    {
-        return $this->{$this->getCreatedAtColumn()};
     }
 }
