@@ -6,11 +6,15 @@ use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
+use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+
+use function random_int;
 
 class PollcastBroadcaster extends Broadcaster
 {
@@ -76,6 +80,10 @@ class PollcastBroadcaster extends Broadcaster
      */
     public function broadcast(array $channels, $event, array $payload = [])
     {
+        if ($this->hitsLottery()) {
+            $this->gc();
+        }
+
         if (Arr::get($payload, 'socket') === null) {
             $payload['socket'] = $this->socket->id();
         }
@@ -94,5 +102,38 @@ class PollcastBroadcaster extends Broadcaster
         }
 
         Message::insert($messages->toArray());
+    }
+
+    /**
+     * Garbage collection for old events.
+     */
+    protected function gc(): void
+    {
+        Channel::query()
+            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+            ->delete();
+
+        Message::query()
+            ->where('created_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
+            ->delete();
+
+        Member::query()
+            ->with('channel')
+            ->where('updated_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
+            ->each(function (Member $member) {
+                /** @var Channel $channel */
+                $channel = $member->channel;
+                $this->socket->removeMemberFromChannel($member, $channel);
+            });
+    }
+
+    /**
+     * Determine if the odds hit the lottery (1 in 10).
+     *
+     * @return bool
+     */
+    protected function hitsLottery(): bool
+    {
+        return random_int(1, 10) <= 1;
     }
 }

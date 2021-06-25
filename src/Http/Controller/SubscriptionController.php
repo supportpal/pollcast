@@ -9,7 +9,6 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
-use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 
@@ -28,8 +27,6 @@ class SubscriptionController
      */
     public function messages(ReceiveRequest $request): JsonResponse
     {
-        $this->gc();
-
         $time = Carbon::now()->toDateTimeString();
 
         $member = Member::query()
@@ -50,29 +47,6 @@ class SubscriptionController
             'time'   => $time,
             'events' => $messages
         ]);
-    }
-
-    /**
-     * Garbage collection for old events.
-     */
-    protected function gc(): void
-    {
-        Channel::query()
-            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
-            ->delete();
-
-        Message::query()
-            ->where('created_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
-            ->delete();
-
-        Member::query()
-            ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
-            ->each(function (Member $member) {
-                /** @var Channel $channel */
-                $channel = $member->channel;
-                $this->socket->removeMemberFromChannel($member, $channel);
-            });
     }
 
     protected function getAuthorisedChannels(): Collection
