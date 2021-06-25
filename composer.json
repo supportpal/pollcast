@@ -49,8 +49,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "unit:tests": "./vendor/bin/phpunit",
-        "codecov": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-html codecov",
+        "unit:tests": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-html codecov",
         "stan:analyse": "./vendor/bin/phpstan analyse",
         "lint:analyse": "./vendor/bin/phpcs --standard=phpcs.xml",
         "lint:fix": "./vendor/bin/phpcbf --standard=phpcs.xml"

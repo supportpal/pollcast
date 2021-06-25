@@ -9,13 +9,20 @@ use SupportPal\Pollcast\Broadcasting\Socket;
 
 class VerifySocketId
 {
+    /** @var Socket */
+    private $socket;
+
+    public function __construct(Socket $socket)
+    {
+        $this->socket = $socket;
+    }
+
     /**
      * @return mixed
      */
     public function handle(Request $request, Closure $next)
     {
-        $socket = new Socket($request->session());
-        if ($socket->id() === null) {
+        if ($this->socket->id() === null) {
             throw new UnauthorizedException;
         }
 
