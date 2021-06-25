@@ -25,7 +25,7 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesNoneQueued(): void
     {
-        $channel = $this->setupChannelAndMember();
+        [$channel,] = $this->setupChannelAndMember();
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
@@ -41,7 +41,7 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesOneQueued(): void
     {
-        $channel = $this->setupChannelAndMember();
+        [$channel,] = $this->setupChannelAndMember();
 
         $event = 'test-event';
         $message = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event]);
@@ -60,7 +60,7 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesMultipleQueued(): void
     {
-        $channel = $this->setupChannelAndMember();
+        [$channel,] = $this->setupChannelAndMember();
 
         $event1 = 'test-event';
         $event2 = 'new-event';
@@ -80,6 +80,27 @@ class SubscriptionTest extends TestCase
                 'time'   => Carbon::now()->toDateTimeString(),
                 'events' => [$message1->load('channel')->toArray(), $message2->load('channel')->toArray()],
             ]);
+    }
+
+    public function testMessagesMemberUpdatedAtTouched(): void
+    {
+        [$channel, $member] = $this->setupChannelAndMember();
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name],
+            'time'     => Carbon::now()->toDateTimeString(),
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'time'   => Carbon::now()->toDateTimeString(),
+                'events' => [],
+            ]);
+
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'id'         => $member->id,
+            'updated_at' => Carbon::now()->toDateTimeString(),
+        ]);
     }
 
     public function testMessagesMemberNotFound(): void
@@ -116,14 +137,21 @@ class SubscriptionTest extends TestCase
             ]);
     }
 
-    private function setupChannelAndMember(): Channel
+    /**
+     * @return mixed[]
+     */
+    private function setupChannelAndMember(): array
     {
         $socketId = 'test';
         session([ Socket::UUID => $socketId ]);
 
         $channel = factory(Channel::class)->create([ 'name' => 'public-channel' ]);
-        factory(Member::class)->create([ 'channel_id' => $channel->id, 'socket_id' => $socketId ]);
+        $member = factory(Member::class)->create([
+            'channel_id' => $channel->id,
+            'socket_id'  => $socketId,
+            'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
+        ]);
 
-        return $channel;
+        return [$channel, $member];
     }
 }
