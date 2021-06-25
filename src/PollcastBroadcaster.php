@@ -80,19 +80,19 @@ class PollcastBroadcaster extends Broadcaster
             $payload['socket'] = $this->socket->id();
         }
 
-        $events = new Collection;
+        $messages = new Collection;
         foreach ($channels as $channel) {
             $channel = Channel::query()->firstOrCreate(['name' => $channel]);
 
-            $event = new Message([
+            $message = new Message([
                 'channel_id' => $channel->id,
                 'event'      => $event,
                 'payload'    => $payload,
             ]);
 
-            $events->push($event->setUuid()->touchTimestamps()->getAttributes());
+            $messages->push($message->setUuid()->touchTimestamps()->getAttributes());
         }
 
-        Message::insert($events->toArray());
+        Message::insert($messages->toArray());
     }
 }
