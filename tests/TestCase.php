@@ -3,6 +3,7 @@
 namespace SupportPal\Pollcast\Tests;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Testing\TestResponse;
 use SupportPal\Pollcast\ServiceProvider;
 
 use function realpath;
@@ -70,5 +71,33 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set('app.key', 'slHhRrJMrmlsM6oC0L1fJp5n4QS8pg7m');
         $app['config']->set('database.default', 'testing');
         $app['config']->set('broadcasting.default', 'pollcast');
+        $app['config']->set('broadcasting.connections.pollcast', [
+            'driver' => 'pollcast',
+        ]);
+    }
+
+    /**
+     * Headers required for an AJAX request.
+     *
+     * @return array<string,string>
+     */
+    public function getAjaxHeaders(): array
+    {
+        return [
+            'HTTP_X-Requested-With' => 'XMLHttpRequest',
+            'HTTP_Accept'           => 'application/json'
+        ];
+    }
+
+    /**
+     * Perform a POST that pretends to be an AJAX request.
+     *
+     * @param  string $route
+     * @param  mixed[]  $data
+     * @return TestResponse
+     */
+    public function postAjax(string $route, array $data = []): TestResponse
+    {
+        return $this->post($route, $data, $this->getAjaxHeaders());
     }
 }
