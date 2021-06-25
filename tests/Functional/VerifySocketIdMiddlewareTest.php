@@ -20,15 +20,15 @@ class VerifySocketIdMiddlewareTest extends TestCase
             ->assertStatus(200);
     }
 
-    /**
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     */
     public function testInvalidSession(): void
     {
-        $mock = Mockery::mock('overload:' . Socket::class);
-        $mock->shouldReceive('id')
-            ->andReturnNull();
+        $this->app->bind(Socket::class, function () {
+            $mock = Mockery::mock(Socket::class);
+            $mock->shouldReceive('id')
+                ->andReturnNull();
+
+            return $mock;
+        });
 
         $this->post(route('supportpal.pollcast.receive'), [
             'channels' => ['test'],
