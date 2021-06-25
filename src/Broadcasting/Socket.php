@@ -14,7 +14,7 @@ class Socket
 {
     use UsePusherChannelConventions;
 
-    private const UUID = 'pollcast:uuid';
+    public const UUID = 'pollcast:uuid';
 
     /** @var Session */
     private $session;
@@ -62,7 +62,7 @@ class Socket
         (new Message([
             'channel_id' => $channel->id,
             'event'      => 'pollcast:member_removed',
-            'payload'    => $member->data,
+            'payload'    => $member->data ?? [],
         ]))->save();
     }
 
