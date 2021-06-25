@@ -83,3 +83,5 @@ phpunit.xml
 phpstan.neon
 composer.lock
 .phpunit.result.cache
+clover.xml
+codecov/
