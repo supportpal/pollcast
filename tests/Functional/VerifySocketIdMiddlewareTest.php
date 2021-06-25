@@ -20,6 +20,10 @@ class VerifySocketIdMiddlewareTest extends TestCase
             ->assertStatus(200);
     }
 
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
     public function testInvalidSession(): void
     {
         $mock = Mockery::mock('overload:' . Socket::class);
