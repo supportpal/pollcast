@@ -67,6 +67,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function getEnvironmentSetUp($app)
     {
+        $app['config']->set('app.key', 'slHhRrJMrmlsM6oC0L1fJp5n4QS8pg7m');
         $app['config']->set('database.default', 'testing');
+        $app['config']->set('broadcasting.default', 'pollcast');
     }
 }
