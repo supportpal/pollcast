@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace SupportPal\Pollcast\Tests\Model;
+namespace SupportPal\Pollcast\Tests\Unit\Model;
 
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel;

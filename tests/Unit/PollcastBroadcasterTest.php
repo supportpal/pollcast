@@ -1,11 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace SupportPal\Pollcast\Tests;
+namespace SupportPal\Pollcast\Tests\Unit;
 
 use Illuminate\Foundation\Auth\User;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\PollcastBroadcaster;
+use SupportPal\Pollcast\Tests\TestCase;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 use function factory;

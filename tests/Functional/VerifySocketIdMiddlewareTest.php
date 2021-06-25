@@ -1,9 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace SupportPal\Pollcast\Tests;
+namespace SupportPal\Pollcast\Tests\Functional;
 
 use Mockery;
 use SupportPal\Pollcast\Broadcasting\Socket;
+use SupportPal\Pollcast\Tests\TestCase;
 
 use function now;
 use function route;

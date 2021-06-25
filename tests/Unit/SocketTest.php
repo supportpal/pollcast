@@ -1,10 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace SupportPal\Pollcast\Tests;
+namespace SupportPal\Pollcast\Tests\Unit;
 
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
+use SupportPal\Pollcast\Tests\TestCase;
 
 use function factory;
 use function json_encode;
