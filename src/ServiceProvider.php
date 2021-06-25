@@ -6,6 +6,8 @@ use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 
+use function config_path;
+
 class ServiceProvider extends BaseServiceProvider
 {
     public function boot(BroadcastManager $manager): void
@@ -19,11 +21,13 @@ class ServiceProvider extends BaseServiceProvider
         $this->loadRoutesFrom(__DIR__.'/Http/routes.php');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__ . '/../config/config.php' => config_path('pollcast.php'),
-            ], 'config');
+        if (! $this->app->runningInConsole()) {
+            return;
         }
+
+        $this->publishes([
+            __DIR__ . '/../config/config.php' => config_path('pollcast.php'),
+        ], 'config');
     }
 
     public function register()

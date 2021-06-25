@@ -12,6 +12,7 @@ use SupportPal\Pollcast\PollcastBroadcaster;
 use SupportPal\Pollcast\Tests\TestCase;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+use function config;
 use function factory;
 use function json_encode;
 use function request;
