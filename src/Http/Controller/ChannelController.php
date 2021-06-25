@@ -46,7 +46,7 @@ class ChannelController extends BroadcastController
 
             $this->socket->joinChannel($channel, $authMember ?? null);
 
-            return new JsonResponse(true);
+            return new JsonResponse([true]);
         } catch (AccessDeniedHttpException $e) {
             $this->removeUnauthenticatedMember($request, $e);
 
