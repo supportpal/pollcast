@@ -18,5 +18,16 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->loadRoutesFrom(__DIR__.'/Http/routes.php');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/../config/config.php' => config_path('pollcast.php'),
+            ], 'config');
+        }
+    }
+
+    public function register()
+    {
+        $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'pollcast');
     }
 }

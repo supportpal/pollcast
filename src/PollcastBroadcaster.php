@@ -14,6 +14,7 @@ use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+use function config;
 use function random_int;
 
 class PollcastBroadcaster extends Broadcaster
@@ -109,17 +110,20 @@ class PollcastBroadcaster extends Broadcaster
      */
     protected function gc(): void
     {
+        $channelLifetime = config('pollcast.channel_lifetime', 1440);
         Channel::query()
-            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+            ->where('updated_at', '<', Carbon::now()->subMinutes($channelLifetime)->toDateTimeString())
             ->delete();
 
+        $messageLifetime = config('pollcast.message_lifetime', 10);
         Message::query()
-            ->where('created_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
+            ->where('created_at', '<', Carbon::now()->subSeconds($messageLifetime)->toDateTimeString())
             ->delete();
 
+        $memberLifetime = config('pollcast.member_lifetime', 10);
         Member::query()
             ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subSeconds(10)->toDateTimeString())
+            ->where('updated_at', '<', Carbon::now()->subSeconds($memberLifetime)->toDateTimeString())
             ->each(function (Member $member) {
                 /** @var Channel $channel */
                 $channel = $member->channel;
@@ -134,6 +138,8 @@ class PollcastBroadcaster extends Broadcaster
      */
     protected function hitsLottery(): bool
     {
-        return random_int(1, 10) <= 1;
+        $lottery = config('pollcast.lottery', [1, 10]);
+
+        return random_int(1, $lottery[1]) <= $lottery[0];
     }
 }
