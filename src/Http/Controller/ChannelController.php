@@ -96,7 +96,5 @@ class ChannelController extends BroadcastController
         }
 
         $this->socket->removeMemberFromChannel($member, $channel);
-
-        throw $e;
     }
 }

@@ -53,9 +53,37 @@ class ChannelTest extends TestCase
             ->assertJson([true]);
     }
 
-    public function testSubscribeChannelAuthError(): void
+    public function testSubscribeChannelAuthErrorChannelNotFound(): void
     {
         $this->post(route('supportpal.pollcast.subscribe'), ['channel_name' => 'private-channel'])
+            ->assertStatus(403);
+    }
+
+    public function testSubscribeChannelAuthErrorMemberNotFound(): void
+    {
+        $channelName = 'private-channel';
+        factory(Channel::class)->create(['name' => $channelName]);
+
+        $this->post(route('supportpal.pollcast.subscribe'), ['channel_name' => $channelName])
+            ->assertStatus(403);
+    }
+
+    public function testSubscribeChannelAuthErrorMemberNoLongerAuthenticated(): void
+    {
+        $channelName = 'channel';
+        $channel = factory(Channel::class)->create(['name' => 'presence-' . $channelName]);
+        Broadcast::channel($channelName, function (User $user) {
+            return false;
+        });
+
+        $socketId = 'test';
+        session([ Socket::UUID => $socketId ]);
+        factory(Member::class)->create(['channel_id' => $channel->id, 'socket_id' => $socketId]);
+
+        $user = factory(User::class)->create();
+
+        $this->actingAs($user)
+            ->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'presence-' . $channelName])
             ->assertStatus(403);
     }
 
