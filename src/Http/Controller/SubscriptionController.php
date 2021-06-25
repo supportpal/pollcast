@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Date;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Channel;
@@ -33,13 +32,17 @@ class SubscriptionController
 
         $time = Carbon::now()->toDateTimeString();
 
-        // Update the last active time in the channel.
-        $this->updateLastActiveTime();
+        $member = Member::query()
+            ->where('socket_id', $this->socket->id())
+            ->firstOrFail();
+
+        // Update the last active time of the member.
+        $member->touch();
 
         $messages = new Collection;
         $channels = $this->getAuthorisedChannels();
         if ($channels->count() > 0) {
-            $messages = $this->getMessagesForRequest($request, $channels);
+            $messages = $this->getMessagesForRequest($member, $request, $channels);
         }
 
         return new JsonResponse([
@@ -72,13 +75,6 @@ class SubscriptionController
             });
     }
 
-    protected function updateLastActiveTime(): void
-    {
-        Member::query()
-            ->where('socket_id', $this->socket->id())
-            ->update(['updated_at' => Date::now()]);
-    }
-
     protected function getAuthorisedChannels(): Collection
     {
         return Member::query()
@@ -87,12 +83,8 @@ class SubscriptionController
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
 
-    protected function getMessagesForRequest(Request $request, Collection $channels): Collection
+    protected function getMessagesForRequest(Member $member, Request $request, Collection $channels): Collection
     {
-        $member = Member::query()
-            ->where('socket_id', $this->socket->id())
-            ->firstOrFail();
-
         return Message::query()
             ->with('channel')
             ->where('created_at', '>=', $request->get('time'))
