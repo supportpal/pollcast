@@ -24,6 +24,7 @@
         "phpstan/phpstan": "^0.12.89",
         "phpstan/phpstan-mockery": "^0.12.14",
         "phpunit/phpunit": "^8.0",
+        "rregeer/phpunit-coverage-check": "^0.3.1",
         "supportpal/coding-standard": "^0.4.0"
     },
     "autoload": {
@@ -49,6 +50,7 @@
     "prefer-stable": true,
     "scripts": {
         "unit:tests": "./vendor/bin/phpunit",
+        "codecov": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --coverage-html codecov",
         "stan:analyse": "./vendor/bin/phpstan analyse",
         "lint:analyse": "./vendor/bin/phpcs --standard=phpcs.xml",
         "lint:fix": "./vendor/bin/phpcbf --standard=phpcs.xml"
