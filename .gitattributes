@@ -3,6 +3,7 @@
 /.gitattributes export-ignore
 /.releaserc export-ignore
 /compose.json export-ignore
+/database/factories export-ignore
 /gulpfile.js export-ignore
 /phpcs.xml export-ignore
 /phpstan.neon.dist export-ignore
