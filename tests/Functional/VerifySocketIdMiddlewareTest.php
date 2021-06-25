@@ -11,6 +11,7 @@ use SupportPal\Pollcast\Tests\TestCase;
 use function factory;
 use function now;
 use function route;
+use function session;
 
 class VerifySocketIdMiddlewareTest extends TestCase
 {
