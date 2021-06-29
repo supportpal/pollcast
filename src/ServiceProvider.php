@@ -7,6 +7,9 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 
+use function array_merge;
+use function is_array;
+use function is_numeric;
 use function config_path;
 
 class ServiceProvider extends BaseServiceProvider
@@ -36,8 +39,8 @@ class ServiceProvider extends BaseServiceProvider
     /**
      * Merge the given configuration with the existing configuration.
      *
-     * @param  string  $path
-     * @param  string  $key
+     * @param  string $path
+     * @param  string $key
      * @return void
      */
     protected function mergeConfigFrom($path, $key)
@@ -51,11 +54,11 @@ class ServiceProvider extends BaseServiceProvider
      * Merges the configs together and takes multi-dimensional arrays into account.
      * https://medium.com/@koenhoeijmakers/properly-merging-configs-in-laravel-packages-a4209701746d
      *
-     * @param  array  $original
-     * @param  array  $merging
-     * @return array
+     * @param  mixed[] $original
+     * @param  mixed[] $merging
+     * @return mixed[]
      */
-    protected function mergeConfig(array $original, array $merging)
+    protected function mergeConfig(array $original, array $merging): array
     {
         $array = array_merge($original, $merging);
 
