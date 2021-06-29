@@ -82,6 +82,7 @@ window.Echo = new Echo({
     publish: "{{ route('supportpal.pollcast.publish') }}",
     subscribe: "{{ route('supportpal.pollcast.subscribe') }}",
     unsubscribe: "{{ route('supportpal.pollcast.unsubscribe') }}"
-  }
+  },
+  polling: "{{ config('pollcast.polling_interval') }}"
 });
 ```
