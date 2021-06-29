@@ -3,36 +3,15 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Channel Lifetime
+    | Polling Interval
     |--------------------------------------------------------------------------
     |
-    | Here you may specify the number of minutes that you wish a channel to
-    | remain idle before it is garbage collected.
+    | Here you may specify how often the polling for new messages occurs, we
+    | recommend a low value to better replicate how a web-sockets environment
+    | would work.
     |
     */
-    'channel_lifetime' => 1440,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Member Lifetime
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify the number of seconds that you wish a member to
-    | remain connected to a channel before it is garbage collected.
-    |
-    */
-    'member_lifetime' => 10,
-
-    /*
-    |--------------------------------------------------------------------------
-    | Message Lifetime
-    |--------------------------------------------------------------------------
-    |
-    | Here you may specify the number of seconds that you wish a message to
-    | remain in the queue before it is garbage collected.
-    |
-    */
-    'message_lifetime' => 10,
+    'polling_interval' => 5,
 
     /*
     |--------------------------------------------------------------------------
@@ -43,5 +22,5 @@ return [
     | broadcasting of events. By default, the odds are 1 out of 10.
     |
     */
-    'lottery' => [1, 10],
+    'gc_lottery' => [1, 10],
 ];

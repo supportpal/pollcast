@@ -110,20 +110,19 @@ class PollcastBroadcaster extends Broadcaster
      */
     protected function gc(): void
     {
-        $channelLifetime = config('pollcast.channel_lifetime', 1440);
         Channel::query()
-            ->where('updated_at', '<', Carbon::now()->subMinutes($channelLifetime)->toDateTimeString())
+            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
             ->delete();
 
-        $messageLifetime = config('pollcast.message_lifetime', 10);
+        $pollingInterval = (int) config('pollcast.polling_interval', 5);
+
         Message::query()
-            ->where('created_at', '<', Carbon::now()->subSeconds($messageLifetime)->toDateTimeString())
+            ->where('created_at', '<', Carbon::now()->subSeconds($pollingInterval * 6)->toDateTimeString())
             ->delete();
 
-        $memberLifetime = config('pollcast.member_lifetime', 10);
         Member::query()
             ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subSeconds($memberLifetime)->toDateTimeString())
+            ->where('updated_at', '<', Carbon::now()->subSeconds($pollingInterval * 6)->toDateTimeString())
             ->each(function (Member $member) {
                 /** @var Channel $channel */
                 $channel = $member->channel;
@@ -138,7 +137,7 @@ class PollcastBroadcaster extends Broadcaster
      */
     protected function hitsLottery(): bool
     {
-        $lottery = config('pollcast.lottery', [1, 10]);
+        $lottery = config('pollcast.gc_lottery', [1, 10]);
 
         return random_int(1, $lottery[1]) <= $lottery[0];
     }

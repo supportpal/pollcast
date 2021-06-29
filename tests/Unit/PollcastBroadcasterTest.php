@@ -114,7 +114,7 @@ class PollcastBroadcasterTest extends TestCase
     public function testBroadcastGarbageCollection(): void
     {
         // Update lottery so garbage collection always runs.
-        config(['pollcast.lottery' => [1, 1]]);
+        config(['pollcast.gc_lottery' => [1, 1]]);
 
         $broadcaster = $this->setupBroadcaster();
 
@@ -132,7 +132,7 @@ class PollcastBroadcasterTest extends TestCase
 
         $member1 = factory(Member::class)->create([
             'channel_id' => $channel2->id,
-            'updated_at' => Carbon::now()->subSeconds(15)->toDateTimeString(),
+            'updated_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
         ]);
         $member2 = factory(Member::class)->create([
             'channel_id' => $channel2->id,
@@ -145,7 +145,7 @@ class PollcastBroadcasterTest extends TestCase
         ]);
         $message2 = factory(Message::class)->create([
             'channel_id' => $channel2->id,
-            'created_at' => Carbon::now()->subSeconds(15)->toDateTimeString(),
+            'created_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
         ]);
 
         $broadcaster->broadcast([], 'test-event', []);
@@ -156,6 +156,53 @@ class PollcastBroadcasterTest extends TestCase
         $this->assertDatabaseHas('pollcast_channel_members', ['id' => $member2->id]);
         $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message1->id]);
         $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message2->id]);
+    }
+
+    public function testBroadcastGarbageCollectionWithDifferentInterval(): void
+    {
+        config(['pollcast.polling_interval' => 10]);
+
+        // Update lottery so garbage collection always runs.
+        config(['pollcast.gc_lottery' => [1, 1]]);
+
+        $broadcaster = $this->setupBroadcaster();
+
+        $channel = factory(Channel::class)->create();
+
+        $member1 = factory(Member::class)->create([
+            'channel_id' => $channel->id,
+            'updated_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
+        ]);
+        $member2 = factory(Member::class)->create([
+            'channel_id' => $channel->id,
+            'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
+        ]);
+        $member3 = factory(Member::class)->create([
+            'channel_id' => $channel->id,
+            'updated_at' => Carbon::now()->subSeconds(65)->toDateTimeString(),
+        ]);
+
+        $message1 = factory(Message::class)->create([
+            'channel_id' => $channel->id,
+            'created_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
+        ]);
+        $message2 = factory(Message::class)->create([
+            'channel_id' => $channel->id,
+            'created_at' => Carbon::now()->subSeconds(143)->toDateTimeString(),
+        ]);
+        $message3 = factory(Message::class)->create([
+            'channel_id' => $channel->id,
+            'created_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
+        ]);
+
+        $broadcaster->broadcast([], 'test-event', []);
+
+        $this->assertDatabaseHas('pollcast_channel_members', ['id' => $member1->id]);
+        $this->assertDatabaseHas('pollcast_channel_members', ['id' => $member2->id]);
+        $this->assertDatabaseMissing('pollcast_channel_members', ['id' => $member3->id]);
+        $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message1->id]);
+        $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message2->id]);
+        $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message3->id]);
     }
 
     /**
