@@ -39,8 +39,8 @@ class ServiceProvider extends BaseServiceProvider
     /**
      * Merge the given configuration with the existing configuration.
      *
-     * @param  string $path
-     * @param  string $key
+     * @param  string|mixed $path
+     * @param  string|mixed $key
      * @return void
      */
     protected function mergeConfigFrom($path, $key)
