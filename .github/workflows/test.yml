@@ -41,4 +41,4 @@ jobs:
 
       - name: Check code coverage
         if: ${{ matrix.php == '7.2' }}
-        run: ./vendor/bin/coverage-check clover.xml 100 --only-percentage
+        uses: codecov/codecov-action@v1
