@@ -8,9 +8,9 @@ use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 
 use function array_merge;
+use function config_path;
 use function is_array;
 use function is_numeric;
-use function config_path;
 
 class ServiceProvider extends BaseServiceProvider
 {
