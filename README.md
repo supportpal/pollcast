@@ -41,14 +41,6 @@ Add the ServiceProvider class to the `providers` array in `config/app.php`. In L
 \SupportPal\Pollcast\ServiceProvider::class,
 ```
 
-Add the `pollcast` driver to `config/broadcasting.php`:
-
-```
-'pollcast' => [
-    'driver' => 'pollcast',
-]
-```
-
 Change the default broadcast driver to in your `.env` file:
 
 ```
