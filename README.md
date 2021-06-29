@@ -20,7 +20,7 @@
 
 ## Motivation
 
-Laravel supports several broadcast drivers but all of these either require integration
+Laravel supports several broadcast drivers, but all of these either require integration
 with a third party service such as Pusher, or installation of additional software. The
 motivation behind this package is to provide a broadcast driver which works in all
 environments without additional configuration and is compatible with Laravel Echo. 
@@ -35,7 +35,7 @@ Require this package with composer:
 composer require supportpal/pollcast
 ```
 
-Add the ServiceProvider class to the `providers` array in `config/app.php`:
+Add the ServiceProvider class to the `providers` array in `config/app.php`. In Laravel versions 5.5 and beyond, this step can be skipped if package auto-discovery is enabled.
 
 ```
 \SupportPal\Pollcast\ServiceProvider::class,
@@ -59,6 +59,12 @@ Add the database tables:
 
 ```
 php artisan migrate --path=vendor/supportpal/pollcast/database/migrations
+```
+
+Finally, publish the config file `config/pollcast.php` if required:
+
+```
+php artisan vendor:publish --provider="SupportPal\Pollcast\ServiceProvider"
 ```
 
 ## Usage

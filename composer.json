@@ -48,6 +48,13 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
+    "extra": {
+        "laravel": {
+            "providers": [
+                "SupportPal\\Pollcast\\ServiceProvider"
+            ]
+        }
+    },
     "scripts": {
         "unit:tests": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-html codecov",
         "stan:analyse": "./vendor/bin/phpstan analyse",
