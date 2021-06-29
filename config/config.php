@@ -6,12 +6,12 @@ return [
     | Polling Interval
     |--------------------------------------------------------------------------
     |
-    | Here you may specify how often the polling for new messages occurs, we
-    | recommend a low value to better replicate how a web-sockets environment
-    | would work.
+    | Here you may specify how often the polling for new messages occurs in
+    | milliseconds, we recommend a low value to better replicate how a
+    | web sockets environment would work.
     |
     */
-    'polling_interval' => 5,
+    'polling_interval' => 5000,
 
     /*
     |--------------------------------------------------------------------------

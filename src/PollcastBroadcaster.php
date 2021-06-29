@@ -114,15 +114,15 @@ class PollcastBroadcaster extends Broadcaster
             ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
             ->delete();
 
-        $pollingInterval = (int) config('pollcast.polling_interval', 5);
+        $pollingInterval = (int) config('pollcast.polling_interval', 5000);
 
         Message::query()
-            ->where('created_at', '<', Carbon::now()->subSeconds($pollingInterval * 6)->toDateTimeString())
+            ->where('created_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
             ->delete();
 
         Member::query()
             ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subSeconds($pollingInterval * 6)->toDateTimeString())
+            ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
             ->each(function (Member $member) {
                 /** @var Channel $channel */
                 $channel = $member->channel;

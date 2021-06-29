@@ -160,7 +160,7 @@ class PollcastBroadcasterTest extends TestCase
 
     public function testBroadcastGarbageCollectionWithDifferentInterval(): void
     {
-        config(['pollcast.polling_interval' => 10]);
+        config(['pollcast.polling_interval' => 10000]);
 
         // Update lottery so garbage collection always runs.
         config(['pollcast.gc_lottery' => [1, 1]]);

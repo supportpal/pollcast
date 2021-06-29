@@ -83,6 +83,6 @@ window.Echo = new Echo({
     subscribe: "{{ route('supportpal.pollcast.subscribe') }}",
     unsubscribe: "{{ route('supportpal.pollcast.unsubscribe') }}"
   },
-  polling: "{{ config('pollcast.polling_interval') }}"
+    polling: {{ Config.get('pollcast.polling_interval', 5000) }}
 });
 ```
