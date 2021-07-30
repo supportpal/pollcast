@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -110,24 +111,26 @@ class PollcastBroadcaster extends Broadcaster
      */
     protected function gc(): void
     {
-        Channel::query()
-            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
-            ->delete();
-
         $pollingInterval = (int) config('pollcast.polling_interval', 5000);
 
         Message::query()
             ->where('created_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
             ->delete();
 
-        Member::query()
-            ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
-            ->each(function (Member $member) {
-                /** @var Channel $channel */
-                $channel = $member->channel;
-                $this->socket->removeMemberFromChannel($member, $channel);
-            });
+        DB::transaction(function () use ($pollingInterval) {
+            Member::query()
+                ->with('channel')
+                ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
+                ->each(function (Member $member) {
+                    /** @var Channel $channel */
+                    $channel = $member->channel;
+                    $this->socket->removeMemberFromChannel($member, $channel);
+                });
+
+            Channel::query()
+                ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+                ->delete();
+        });
     }
 
     /**
