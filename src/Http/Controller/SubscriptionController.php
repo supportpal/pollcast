@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Http\Controller;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -30,6 +31,10 @@ class SubscriptionController
         $time = Carbon::now();
 
         $memberQuery = Member::query()->where('socket_id', $this->socket->id());
+        $members = $memberQuery->get();
+        if ($members->isEmpty()) {
+            throw (new ModelNotFoundException)->setModel(Member::class);
+        }
 
         // Update the last active time of the member.
         $memberQuery->update(['updated_at' => $time]);
@@ -37,7 +42,7 @@ class SubscriptionController
         $messages = new Collection;
         $channels = $this->getAuthorisedChannels();
         if ($channels->count() > 0) {
-            $messages = $this->getMessagesForRequest($memberQuery->get(), $request, $channels);
+            $messages = $this->getMessagesForRequest($members, $request, $channels);
         }
 
         return new JsonResponse([
