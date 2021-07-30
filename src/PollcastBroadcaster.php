@@ -117,22 +117,24 @@ class PollcastBroadcaster extends Broadcaster
             ->where('created_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
             ->delete();
 
-        Member::query()
-            ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
-            ->each(function (Member $member) {
-                /** @var Channel|null $channel */
-                $channel = $member->channel;
-                if ($channel) {
-                    $this->socket->removeMemberFromChannel($member, $channel);
-                } else {
-                    $member->delete();
-                }
-            });
+        DB::transaction(function () use ($pollingInterval) {
+            Member::query()
+                ->with('channel')
+                ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
+                ->each(function (Member $member) {
+                    /** @var Channel|null $channel */
+                    $channel = $member->channel;
+                    if ($channel) {
+                        $this->socket->removeMemberFromChannel($member, $channel);
+                    } else {
+                        $member->delete();
+                    }
+                });
 
-        Channel::query()
-            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
-            ->delete();
+            Channel::query()
+                ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+                ->delete();
+        });
     }
 
     /**
