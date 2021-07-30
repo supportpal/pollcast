@@ -1,0 +1,7 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Access to an undefined property Faker\\\\UniqueGenerator\\:\\:\\$email\\.$#"
+			count: 1
+			path: database/factories/UserFactory.php
+
