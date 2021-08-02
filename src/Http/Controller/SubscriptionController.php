@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Http\Controller;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -27,24 +28,26 @@ class SubscriptionController
      */
     public function messages(ReceiveRequest $request): JsonResponse
     {
-        $time = Carbon::now()->toDateTimeString();
+        $time = Carbon::now();
 
-        $member = Member::query()
-            ->where('socket_id', $this->socket->id())
-            ->firstOrFail();
+        $memberQuery = Member::query()->where('socket_id', $this->socket->id());
+        $members = $memberQuery->get();
+        if ($members->isEmpty()) {
+            throw (new ModelNotFoundException)->setModel(Member::class);
+        }
 
         // Update the last active time of the member.
-        $member->touch();
+        $memberQuery->update(['updated_at' => $time]);
 
         $messages = new Collection;
         $channels = $this->getAuthorisedChannels();
         if ($channels->count() > 0) {
-            $messages = $this->getMessagesForRequest($member, $request, $channels);
+            $messages = $this->getMessagesForRequest($members, $request, $channels);
         }
 
         return new JsonResponse([
             'status' => 'success',
-            'time'   => $time,
+            'time'   => $time->toDateTimeString(),
             'events' => $messages
         ]);
     }
@@ -57,13 +60,13 @@ class SubscriptionController
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
 
-    protected function getMessagesForRequest(Member $member, Request $request, Collection $channels): Collection
+    protected function getMessagesForRequest(Collection $members, Request $request, Collection $channels): Collection
     {
         return Message::query()
             ->with('channel')
             ->where('created_at', '>=', $request->get('time'))
-            ->where(function ($query) use ($member, $channels, $request) {
-                $query->orWhere('member_id', $member->id);
+            ->where(function ($query) use ($members, $channels, $request) {
+                $query->orWhereIn('member_id', $members->pluck('id'));
 
                 $channels->each(function (string $name, string $id) use ($request, $query) {
                     // Get requested events.
