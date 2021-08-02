@@ -103,6 +103,32 @@ class SubscriptionTest extends TestCase
         ]);
     }
 
+    public function testMessagesMemberUpdatedAtTouchedMultipleChannels(): void
+    {
+        [$channel1, $member1] = $this->setupChannelAndMember();
+        [$channel2, $member2] = $this->setupChannelAndMember();
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel1->name, $channel2->name],
+            'time'     => Carbon::now()->toDateTimeString(),
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'time'   => Carbon::now()->toDateTimeString(),
+                'events' => [],
+            ]);
+
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'id'         => $member1->id,
+            'updated_at' => Carbon::now()->toDateTimeString(),
+        ]);
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'id'         => $member2->id,
+            'updated_at' => Carbon::now()->toDateTimeString(),
+        ]);
+    }
+
     public function testMessagesMemberNotFound(): void
     {
         $this->postAjax(route('supportpal.pollcast.receive'), [
