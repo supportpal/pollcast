@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -117,24 +116,20 @@ class PollcastBroadcaster extends Broadcaster
             ->where('created_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
             ->delete();
 
-        DB::transaction(function () use ($pollingInterval) {
-            Member::query()
-                ->with('channel')
-                ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
-                ->each(function (Member $member) {
-                    /** @var Channel|null $channel */
-                    $channel = $member->channel;
-                    if ($channel) {
-                        $this->socket->removeMemberFromChannel($member, $channel);
-                    } else {
-                        $member->delete();
-                    }
-                });
+        Member::query()
+            ->with('channel')
+            ->where('updated_at', '<', Carbon::now()->subMilliseconds($pollingInterval * 6)->toDateTimeString())
+            ->each(function (Member $member) {
+                /** @var Channel $channel */
+                $channel = $member->channel;
+                $this->socket->removeMemberFromChannel($member, $channel);
+            });
 
-            Channel::query()
-                ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
-                ->delete();
-        });
+        Channel::query()
+            ->leftJoin('pollcast_channel_members', 'pollcast_channel_members.channel_id', '=', 'pollcast_channel.id')
+            ->where('pollcast_channel.updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+            ->whereNull('pollcast_channel_members.socket_id')
+            ->delete();
     }
 
     /**

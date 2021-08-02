@@ -205,6 +205,28 @@ class PollcastBroadcasterTest extends TestCase
         $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message3->id]);
     }
 
+    public function testBroadcastGarbageCollectionEmptyChannelOnly(): void
+    {
+        // Update lottery so garbage collection always runs.
+        config(['pollcast.gc_lottery' => [1, 1]]);
+
+        $broadcaster = $this->setupBroadcaster();
+
+        $channel1 = factory(Channel::class)->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
+        $channel2 = factory(Channel::class)->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
+
+        $member = factory(Member::class)->create([
+            'channel_id' => $channel1->id,
+            'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
+        ]);
+
+        $broadcaster->broadcast([], 'test-event', []);
+
+        $this->assertDatabaseHas('pollcast_channel', ['id' => $channel1->id]);
+        $this->assertDatabaseMissing('pollcast_channel', ['id' => $channel2->id]);
+        $this->assertDatabaseHas('pollcast_channel_members', ['id' => $member->id]);
+    }
+
     /**
      * @return PollcastBroadcaster
      */
