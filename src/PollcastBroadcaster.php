@@ -110,10 +110,6 @@ class PollcastBroadcaster extends Broadcaster
      */
     protected function gc(): void
     {
-        Channel::query()
-            ->where('updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
-            ->delete();
-
         $pollingInterval = (int) config('pollcast.polling_interval', 5000);
 
         Message::query()
@@ -128,6 +124,12 @@ class PollcastBroadcaster extends Broadcaster
                 $channel = $member->channel;
                 $this->socket->removeMemberFromChannel($member, $channel);
             });
+
+        Channel::query()
+            ->leftJoin('pollcast_channel_members', 'pollcast_channel_members.channel_id', '=', 'pollcast_channel.id')
+            ->where('pollcast_channel.updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
+            ->whereNull('pollcast_channel_members.socket_id')
+            ->delete();
     }
 
     /**
