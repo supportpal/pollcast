@@ -82,6 +82,27 @@ class SubscriptionTest extends TestCase
             ]);
     }
 
+    public function testMessagesOrdering(): void
+    {
+        [$channel,] = $this->setupChannelAndMember();
+
+        $event = 'test-event';
+        $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
+        $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56']);
+        $message3 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:58']);
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => [$event]],
+            'time'     => '2021-06-01 11:59:55',
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'time'   => Carbon::now()->toDateTimeString(),
+                'events' => [$message2->load('channel')->toArray(), $message1->load('channel')->toArray(), $message3->load('channel')->toArray()],
+            ]);
+    }
+
     public function testMessagesMemberUpdatedAtTouched(): void
     {
         [$channel, $member] = $this->setupChannelAndMember();

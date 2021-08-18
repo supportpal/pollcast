@@ -80,6 +80,7 @@ class SubscriptionController
                     }
                 });
             })
+            ->orderBy('created_at')
             ->get()
             // Remove events triggered by the same member (prevent unnecessary events).
             ->filter(function (Message $message) {
