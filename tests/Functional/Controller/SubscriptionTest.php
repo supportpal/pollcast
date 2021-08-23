@@ -89,7 +89,7 @@ class SubscriptionTest extends TestCase
         $event = 'test-event';
         $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123456']);
         $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.023456']);
-        $message3 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:58.123465']);
+        $message3 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123465']);
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name => [$event]],
