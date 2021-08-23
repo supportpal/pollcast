@@ -28,7 +28,7 @@ class CreatePollcastMessageQueueTable extends Migration
             $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->onDelete('cascade');
 
             $table->text('event');
-            $table->text('payload');
+            $table->mediumText('payload');
             $table->timestamps(6);
 
             $table->index('created_at');
