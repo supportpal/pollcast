@@ -29,7 +29,7 @@ class CreatePollcastMessageQueueTable extends Migration
 
             $table->text('event');
             $table->text('payload');
-            $table->timestamps();
+            $table->timestamps(6);
 
             $table->index('created_at');
         });

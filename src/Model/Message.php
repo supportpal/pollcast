@@ -65,4 +65,9 @@ class Message extends Model
 
         return $this;
     }
+
+    public function getDateFormat(): string
+    {
+        return 'Y-m-d H:i:s.u';
+    }
 }
