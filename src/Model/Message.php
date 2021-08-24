@@ -5,6 +5,9 @@ namespace SupportPal\Pollcast\Model;
 use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Date;
+
+use function json_encode;
 
 /**
  * @property-read string $id
@@ -50,24 +53,27 @@ class Message extends Model
         return $this->belongsTo(Member::class);
     }
 
-    public function setUuid(): self
-    {
-        $this->{$this->getKeyName()} = $this->generateUuid();
-
-        return $this;
-    }
-
-    public function touchTimestamps(): self
-    {
-        if ($this->usesTimestamps()) {
-            $this->updateTimestamps();
-        }
-
-        return $this;
-    }
-
     public function getDateFormat(): string
     {
         return 'Y-m-d H:i:s.u';
+    }
+
+    /**
+     * @param mixed[] $payload
+     * @return mixed[]
+     */
+    public static function make(string $channel, string $event, array $payload, ?string $member = null): array
+    {
+        $instance = new self;
+
+        return [
+            $instance->getKeyName() => $instance->generateUuid(),
+            'channel_id'            => $channel,
+            'member_id'             => $member,
+            'event'                 => $event,
+            'payload'               => json_encode($payload),
+            'created_at'            => Date::now(),
+            'updated_at'            => Date::now(),
+        ];
     }
 }

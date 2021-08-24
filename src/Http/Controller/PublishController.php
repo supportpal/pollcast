@@ -18,11 +18,9 @@ class PublishController
             ->where('name', $request->channel_name)
             ->firstOrFail();
 
-        (new Message([
-            'channel_id' => $channel->id,
-            'event'      => $request->event,
-            'payload'    => $request->data,
-        ]))->save();
+        Message::insert([
+            Message::make($channel->id, $request->event, $request->data)
+        ]);
 
         return new JsonResponse([true]);
     }

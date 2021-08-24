@@ -10,8 +10,10 @@ use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function factory;
+use function implode;
 use function route;
 use function session;
+use function vsprintf;
 
 class SubscriptionTest extends TestCase
 {
@@ -84,23 +86,47 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesOrdering(): void
     {
+        $event = 'test-event';
         [$channel,] = $this->setupChannelAndMember();
 
-        $event = 'test-event';
-        $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123456']);
-        $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.023456']);
-        $message3 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123465']);
+        $message1 = Message::make($channel->id, $event, ['message1']);
+        $message1['created_at'] = '2021-06-01 11:59:56.123456';
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $message2 = Message::make($channel->id, $event, ['message2']);
+        $message2['created_at'] = '2021-06-01 11:59:56.023456';
+
+        $message3 = Message::make($channel->id, $event, ['message3']);
+        $message3['created_at'] = '2021-06-01 11:59:56.123465';
+
+        Message::insert([$message1, $message2, $message3]);
+
+        $params = [
             'channels' => [$channel->name => [$event]],
             'time'     => '2021-06-01 11:59:55',
-        ])
+        ];
+        $response = $this->postAjax(route('supportpal.pollcast.receive'), $params)
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
                 'time'   => Carbon::now()->toDateTimeString(),
-                'events' => [$message2->load('channel')->toArray(), $message1->load('channel')->toArray(), $message3->load('channel')->toArray()],
             ]);
+
+        $json = $response->decodeResponseJson();
+        $this->assertArrayHasKey('events', $json);
+
+        $expected = [$message2['id'], $message1['id'], $message3['id']];
+        foreach ($expected as $order => $id) {
+            $this->assertSame(
+                $id,
+                $json['events'][$order]['id'],
+                vsprintf('Key %d value %s does not match expected value %s. The expected order is: %s', [
+                    $order,
+                    $json['events'][$order]['id'],
+                    $id,
+                    implode(', ', $expected)
+                ])
+            );
+        }
     }
 
     public function testMessagesMemberUpdatedAtTouched(): void

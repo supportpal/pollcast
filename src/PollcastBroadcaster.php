@@ -91,15 +91,10 @@ class PollcastBroadcaster extends Broadcaster
 
         $messages = new Collection;
         foreach ($channels as $channel) {
+            /** @var Channel $channel */
             $channel = Channel::query()->firstOrCreate(['name' => $channel]);
 
-            $message = new Message([
-                'channel_id' => $channel->id,
-                'event'      => $event,
-                'payload'    => $payload,
-            ]);
-
-            $messages->push($message->setUuid()->touchTimestamps()->getAttributes());
+            $messages->push(Message::make($channel->id, $event, $payload));
         }
 
         Message::insert($messages->toArray());

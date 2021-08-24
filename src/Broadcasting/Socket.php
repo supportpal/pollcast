@@ -59,11 +59,9 @@ class Socket
             return;
         }
 
-        (new Message([
-            'channel_id' => $channel->id,
-            'event'      => 'pollcast:member_removed',
-            'payload'    => $member->data ?? [],
-        ]))->save();
+        Message::insert([
+            Message::make($channel->id, 'pollcast:member_removed', $member->data ?? [])
+        ]);
     }
 
     protected function create(): self
@@ -86,18 +84,16 @@ class Socket
     protected function joinedPresenceChannel(Channel $channel, Member $member, array $memberData): void
     {
         // Broadcast subscription succeeded event to the member.
-        (new Message([
-            'channel_id' => $channel->id,
-            'member_id'  => $member->id,
-            'event'      => 'pollcast:subscription_succeeded',
-            'payload'    => Member::query()->where('channel_id', $channel->id)->pluck('data'),
-        ]))->save();
+        $messages = [
+            Message::make(
+                $channel->id,
+                'pollcast:subscription_succeeded',
+                Member::query()->where('channel_id', $channel->id)->pluck('data')->all(),
+                $member->id
+            ),
+            Message::make($channel->id, 'pollcast:member_added', $memberData),
+        ];
 
-        // Broadcast member added event to everyone in the channel.
-        (new Message([
-            'channel_id' => $channel->id,
-            'event'      => 'pollcast:member_added',
-            'payload'    => $memberData,
-        ]))->save();
+        Message::insert($messages);
     }
 }
