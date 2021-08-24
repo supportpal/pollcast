@@ -53,11 +53,6 @@ class Message extends Model
         return $this->belongsTo(Member::class);
     }
 
-    public function getDateFormat(): string
-    {
-        return 'Y-m-d H:i:s.u';
-    }
-
     /**
      * @param mixed[] $payload
      * @return mixed[]
