@@ -47,7 +47,7 @@ class SubscriptionController
 
         return new JsonResponse([
             'status' => 'success',
-            'time'   => $time->toDateTimeString(),
+            'time'   => $time->toDateTimeString('microsecond'),
             'events' => $messages
         ]);
     }

@@ -10,8 +10,10 @@ use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function factory;
+use function implode;
 use function route;
 use function session;
+use function vsprintf;
 
 class SubscriptionTest extends TestCase
 {
@@ -29,12 +31,12 @@ class SubscriptionTest extends TestCase
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
-            'time'     => Carbon::now()->toDateTimeString(),
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'time'   => Carbon::now()->toDateTimeString(),
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [],
             ]);
     }
@@ -53,7 +55,7 @@ class SubscriptionTest extends TestCase
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'time'   => Carbon::now()->toDateTimeString(),
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [$message->load('channel')->toArray()],
             ]);
     }
@@ -77,7 +79,7 @@ class SubscriptionTest extends TestCase
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'time'   => Carbon::now()->toDateTimeString(),
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [$message1->load('channel')->toArray(), $message2->load('channel')->toArray()],
             ]);
     }
@@ -91,16 +93,33 @@ class SubscriptionTest extends TestCase
         $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.023456']);
         $message3 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123465']);
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $params = [
             'channels' => [$channel->name => [$event]],
             'time'     => '2021-06-01 11:59:55',
-        ])
+        ];
+        $response = $this->postAjax(route('supportpal.pollcast.receive'), $params)
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'time'   => Carbon::now()->toDateTimeString(),
-                'events' => [$message2->load('channel')->toArray(), $message1->load('channel')->toArray(), $message3->load('channel')->toArray()],
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
             ]);
+
+        $json = $response->decodeResponseJson();
+        $this->assertArrayHasKey('events', $json);
+
+        $expected = [$message2['id'], $message1['id'], $message3['id']];
+        foreach ($expected as $order => $id) {
+            $this->assertSame(
+                $id,
+                $json['events'][$order]['id'],
+                vsprintf('Key %d value %s does not match expected value %s. The expected order is: %s', [
+                    $order,
+                    $json['events'][$order]['id'],
+                    $id,
+                    implode(', ', $expected)
+                ])
+            );
+        }
     }
 
     public function testMessagesMemberUpdatedAtTouched(): void
@@ -109,12 +128,12 @@ class SubscriptionTest extends TestCase
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
-            'time'     => Carbon::now()->toDateTimeString(),
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'time'   => Carbon::now()->toDateTimeString(),
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [],
             ]);
 
@@ -131,12 +150,12 @@ class SubscriptionTest extends TestCase
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel1->name, $channel2->name],
-            'time'     => Carbon::now()->toDateTimeString(),
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'time'   => Carbon::now()->toDateTimeString(),
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [],
             ]);
 
@@ -154,7 +173,7 @@ class SubscriptionTest extends TestCase
     {
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => ['fake-channel'],
-            'time'     => Carbon::now()->toDateTimeString(),
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
             ->assertStatus(404);
     }
