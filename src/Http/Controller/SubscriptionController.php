@@ -42,7 +42,7 @@ class SubscriptionController
         $messages = new Collection;
         $channels = $this->getAuthorisedChannels();
         if ($channels->count() > 0) {
-            $messages = $this->getMessagesForRequest($members, $request, $channels, $time);
+            $messages = $this->getMessagesForRequest($time, $members, $request, $channels);
         }
 
         return new JsonResponse([
@@ -61,10 +61,10 @@ class SubscriptionController
     }
 
     protected function getMessagesForRequest(
+        Carbon $time,
         Collection $members,
         Request $request,
-        Collection $channels,
-        Carbon $time
+        Collection $channels
     ): Collection {
         return Message::query()
             ->with('channel')
