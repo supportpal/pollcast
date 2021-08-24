@@ -65,8 +65,7 @@ class SubscriptionController
         Request $request,
         Collection $channels,
         Carbon $time
-    ): Collection
-    {
+    ): Collection {
         return Message::query()
             ->with('channel')
             ->where('created_at', '>=', $request->get('time'))
