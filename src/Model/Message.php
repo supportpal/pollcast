@@ -11,8 +11,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-use function sprintf;
 use function phpversion;
+use function sprintf;
 use function version_compare;
 
 /**
