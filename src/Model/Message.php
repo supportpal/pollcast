@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 use function sprintf;
+use function phpversion;
+use function version_compare;
 
 /**
  * @property-read string $id
@@ -79,6 +81,9 @@ class Message extends Model
     /**
      * To get around PHP 7.2 PDO bug with fractional datetimes - https://bugs.php.net/bug.php?id=76386
      * https://github.com/laravel/framework/issues/3506#issuecomment-383877242
+     *
+     * @param  mixed  $value
+     * @return Carbon
      */
     protected function asDateTime($value): Carbon
     {
@@ -97,7 +102,7 @@ class Message extends Model
     {
         $query = parent::newQuery();
 
-        if ($this->usesTimestamps()) {
+        if (version_compare((string) phpversion(), '7.3', '<') && $this->usesTimestamps()) {
             $table = $this->getTable();
             $createdAt = $this->getCreatedAtColumn();
             $updatedAt = $this->getUpdatedAtColumn();
