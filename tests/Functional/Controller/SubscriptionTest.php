@@ -46,7 +46,7 @@ class SubscriptionTest extends TestCase
         [$channel,] = $this->setupChannelAndMember();
 
         $event = 'test-event';
-        $message = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event]);
+        $message = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name => [$event]],
@@ -66,10 +66,10 @@ class SubscriptionTest extends TestCase
 
         $event1 = 'test-event';
         $event2 = 'new-event';
-        $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event1]);
+        $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event1, 'created_at' => '2021-06-01 11:59:56']);
         factory(Message::class)->create(['channel_id' => $channel->id]);
         factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:50']);
-        $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event2]);
+        $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:57']);
         factory(Message::class)->create();
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
@@ -81,6 +81,36 @@ class SubscriptionTest extends TestCase
                 'status' => 'success',
                 'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [$message1->load('channel')->toArray(), $message2->load('channel')->toArray()],
+            ]);
+    }
+
+    public function testMessagesNotDuplicated(): void
+    {
+        [$channel,] = $this->setupChannelAndMember();
+
+        $event = 'test-event';
+        $message = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => [$event]],
+            'time'     => '2021-06-01 11:59:55',
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'time'   => $time = Carbon::now()->toDateTimeString('microsecond'),
+                'events' => [$message->load('channel')->toArray()],
+            ]);
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => [$event]],
+            'time'     => $time,
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
+                'events' => [],
             ]);
     }
 
