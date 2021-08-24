@@ -2,9 +2,18 @@
 
 namespace SupportPal\Pollcast\Model;
 
+use DateTimeImmutable;
 use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
+
+use function phpversion;
+use function sprintf;
+use function version_compare;
 
 /**
  * @property-read string $id
@@ -40,6 +49,9 @@ class Message extends Model
         'payload'    => 'json',
     ];
 
+    /** @var string */
+    protected $dateFormat = 'Y-m-d H:i:s.u';
+
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
@@ -66,8 +78,40 @@ class Message extends Model
         return $this;
     }
 
-    public function getDateFormat(): string
+    /**
+     * To get around PHP 7.2 PDO bug with fractional datetimes - https://bugs.php.net/bug.php?id=76386
+     * https://github.com/laravel/framework/issues/3506#issuecomment-383877242
+     *
+     * @param  mixed  $value
+     * @return Carbon
+     */
+    protected function asDateTime($value): Carbon
     {
-        return 'Y-m-d H:i:s.u';
+        try {
+            return parent::asDateTime($value);
+        } catch (InvalidArgumentException $e) {
+            return parent::asDateTime(new DateTimeImmutable($value));
+        }
+    }
+
+    /**
+     * To get around PHP 7.2 PDO bug with fractional datetimes - https://bugs.php.net/bug.php?id=76386
+     * https://github.com/laravel/framework/issues/3506#issuecomment-383877242
+     */
+    public function newQuery(): Builder
+    {
+        $query = parent::newQuery();
+
+        if (version_compare((string) phpversion(), '7.3', '<') && $this->usesTimestamps()) {
+            $table = $this->getTable();
+            $createdAt = $this->getCreatedAtColumn();
+            $updatedAt = $this->getUpdatedAtColumn();
+
+            $query->select()
+                ->addSelect(DB::raw(sprintf('CAST(%s.%s AS CHAR) as %s', $table, $createdAt, $createdAt)))
+                ->addSelect(DB::raw(sprintf('CAST(%s.%s AS CHAR) as %s', $table, $updatedAt, $updatedAt)));
+        }
+
+        return $query;
     }
 }
