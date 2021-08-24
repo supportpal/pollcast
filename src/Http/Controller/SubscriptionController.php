@@ -42,12 +42,12 @@ class SubscriptionController
         $messages = new Collection;
         $channels = $this->getAuthorisedChannels();
         if ($channels->count() > 0) {
-            $messages = $this->getMessagesForRequest($members, $request, $channels);
+            $messages = $this->getMessagesForRequest($time, $members, $request, $channels);
         }
 
         return new JsonResponse([
             'status' => 'success',
-            'time'   => $time->toDateTimeString(),
+            'time'   => $time->toDateTimeString('microsecond'),
             'events' => $messages
         ]);
     }
@@ -60,11 +60,16 @@ class SubscriptionController
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
 
-    protected function getMessagesForRequest(Collection $members, Request $request, Collection $channels): Collection
-    {
+    protected function getMessagesForRequest(
+        Carbon $time,
+        Collection $members,
+        Request $request,
+        Collection $channels
+    ): Collection {
         return Message::query()
             ->with('channel')
             ->where('created_at', '>=', $request->get('time'))
+            ->where('created_at', '<', $time->toDateTimeString('microsecond'))
             ->where(function ($query) use ($members, $channels, $request) {
                 $query->orWhereIn('member_id', $members->pluck('id'));
 
