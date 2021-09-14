@@ -39,4 +39,4 @@ jobs:
 
       - name: Check code coverage
         if: ${{ matrix.php == '7.2' }}
-        uses: codecov/codecov-action@v2.0.3
+        uses: codecov/codecov-action@v2.1.0
