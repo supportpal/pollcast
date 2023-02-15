@@ -12,7 +12,12 @@ jobs:
       matrix:
         laravel: ['6', '7', '8', '9']
         php: ['7.2', '7.3', '7.4', '8.0', '8.1', '8.2']
-        stability: [prefer-stable]
+        exclude:
+          - { laravel: '6', php: '8.1' }
+          - { laravel: '6', php: '8.2' }
+          - { laravel: '7', php: '8.1' }
+          - { laravel: '7', php: '8.2' }
+          - { laravel: '9', php: '7.4' }
 
     name: PHP ${{ matrix.php }} - ${{ matrix.stability }}
 
