@@ -35,13 +35,16 @@ class Member extends Model
     /** @var string[] */
     protected $fillable = ['channel_id', 'socket_id', 'data'];
 
-    /** @var string[] */
+    /** @var array<string, string> */
     protected $casts = [
         'channel_id' => 'string',
         'socket_id'  => 'string',
         'data'       => 'json',
     ];
 
+    /**
+     * @return BelongsTo<Channel, Member>
+     */
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
@@ -50,7 +53,7 @@ class Member extends Model
     /**
      * Create a new factory instance for the model.
      *
-     * @return Factory
+     * @return Factory<Member>
      */
     protected static function newFactory()
     {

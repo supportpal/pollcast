@@ -36,7 +36,7 @@ class Message extends Model
     /** @var string[] */
     protected $fillable = ['channel_id', 'member_id', 'event', 'payload'];
 
-    /** @var string[] */
+    /** @var array<string, string> */
     protected $casts = [
         'channel_id' => 'string',
         'member_id'  => 'string',
@@ -47,11 +47,17 @@ class Message extends Model
     /** @var string */
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
+    /**
+     * @return BelongsTo<Channel, Message>
+     */
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
     }
 
+    /**
+     * @return BelongsTo<Member, Message>
+     */
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class);
@@ -76,7 +82,7 @@ class Message extends Model
     /**
      * Create a new factory instance for the model.
      *
-     * @return Factory
+     * @return Factory<Message>
      */
     protected static function newFactory()
     {

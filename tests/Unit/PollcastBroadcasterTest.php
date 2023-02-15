@@ -13,6 +13,7 @@ use SupportPal\Pollcast\PollcastBroadcaster;
 use SupportPal\Pollcast\Tests\TestCase;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+use function app;
 use function config;
 use function json_encode;
 use function request;
@@ -245,7 +246,7 @@ class PollcastBroadcasterTest extends TestCase
     {
         session([Socket::UUID => 'test']);
 
-        $socket = new Socket($this->app['session.store']);
+        $socket = new Socket(app('session.store'));
 
         return new PollcastBroadcaster($socket);
     }
@@ -255,6 +256,7 @@ class PollcastBroadcasterTest extends TestCase
      */
     private function setupRequest(string $channelName): array
     {
+        /** @var User $user */
         $user = UserFactory::new()->create();
         $this->actingAs($user);
 

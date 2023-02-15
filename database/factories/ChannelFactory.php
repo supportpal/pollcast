@@ -7,19 +7,22 @@ use SupportPal\Pollcast\Model\Channel;
 
 use function fake;
 
+/**
+ * @extends Factory<Channel>
+ */
 class ChannelFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var string
+     * @var class-string<Channel>
      */
     protected $model = Channel::class;
 
     /**
      * Define the model's default state.
      *
-     * @return array
+     * @return array<string, mixed>
      */
     public function definition()
     {

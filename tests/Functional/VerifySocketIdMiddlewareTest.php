@@ -8,6 +8,7 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
+use function app;
 use function now;
 use function route;
 use function session;
@@ -29,7 +30,7 @@ class VerifySocketIdMiddlewareTest extends TestCase
     {
         $channel = $this->setupChannelAndMember();
 
-        $this->app->bind(Socket::class, function () {
+        app()->bind(Socket::class, function () {
             $mock = Mockery::mock(Socket::class);
             $mock->shouldReceive('id')
                 ->andReturnNull();

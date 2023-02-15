@@ -45,6 +45,7 @@ class ChannelTest extends TestCase
             return true;
         });
 
+        /** @var User $user */
         $user = UserFactory::new()->create();
 
         $this->actingAs($user)
@@ -80,6 +81,7 @@ class ChannelTest extends TestCase
         session([ Socket::UUID => $socketId ]);
         Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId]);
 
+        /** @var User $user */
         $user = UserFactory::new()->create();
 
         $this->actingAs($user)

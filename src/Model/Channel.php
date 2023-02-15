@@ -32,7 +32,7 @@ class Channel extends Model
     /** @var string[] */
     protected $fillable = ['name'];
 
-    /** @var string[] */
+    /** @var array<string, string> */
     protected $casts = [
         'name' => 'string',
     ];
@@ -40,7 +40,7 @@ class Channel extends Model
     /**
      * Create a new factory instance for the model.
      *
-     * @return Factory
+     * @return Factory<Channel>
      */
     protected static function newFactory()
     {
