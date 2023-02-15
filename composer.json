@@ -44,6 +44,9 @@
         "sort-packages": true,
         "platform": {
             "php": "7.2.5"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": false
         }
     },
     "minimum-stability": "dev",
