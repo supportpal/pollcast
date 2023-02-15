@@ -78,10 +78,11 @@ jobs:
         run: |
           composer run lint:analyse
           composer run stan:analyse
+        if: "matrix.php == '8.1' && matrix.laravel == '9'"
 
       - name: Execute tests
         run: ./vendor/bin/phpunit --coverage-clover clover.xml
 
       - name: Check code coverage
-        if: ${{ matrix.php == '7.2' }}
         uses: codecov/codecov-action@v3
+        if: "matrix.php == '8.1' && matrix.laravel == '9'"
