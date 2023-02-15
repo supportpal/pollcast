@@ -52,6 +52,9 @@ class SubscriptionController
         ]);
     }
 
+    /**
+     * @return Collection<string, string>
+     */
     protected function getAuthorisedChannels(): Collection
     {
         return Member::query()
@@ -60,6 +63,11 @@ class SubscriptionController
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
 
+    /**
+     * @param Collection<int, Member> $members
+     * @param Collection<string, string> $channels
+     * @return Collection<int, Message>
+     */
     protected function getMessagesForRequest(
         Carbon $time,
         Collection $members,

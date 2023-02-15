@@ -9,27 +9,28 @@
         }
     ],
     "require": {
-        "php": ">=7.2.5",
+        "php": "^8.0",
         "ext-json": "*",
-        "goldspecdigital/laravel-eloquent-uuid": "^6.0|^7.0|^8.0",
-        "illuminate/broadcasting": "^6.0|^7.0|^8.0",
-        "illuminate/database": "^6.0|^7.0|^8.0",
-        "illuminate/http": "^6.0|^7.0|^8.0",
-        "illuminate/session": "^6.0|^7.0|^8.0",
-        "illuminate/support": "^6.0|^7.0|^8.0"
+        "goldspecdigital/laravel-eloquent-uuid": "^9.0",
+        "illuminate/broadcasting": "^9.0",
+        "illuminate/database": "^9.0",
+        "illuminate/http": "^9.0",
+        "illuminate/session": "^9.0",
+        "illuminate/support": "^9.0"
     },
     "require-dev": {
         "graham-campbell/testbench": "^5.4",
-        "nunomaduro/larastan": "^0.7.6",
-        "phpstan/phpstan": "^0.12.89",
-        "phpstan/phpstan-mockery": "^0.12.14",
-        "phpunit/phpunit": "^8.0",
+        "nunomaduro/larastan": "^2.0",
+        "phpstan/phpstan": "^1.0",
+        "phpstan/phpstan-mockery": "^1.1",
+        "phpunit/phpunit": "^9.6",
         "rregeer/phpunit-coverage-check": "^0.3.1",
         "supportpal/coding-standard": "^0.4.0"
     },
     "autoload": {
         "psr-4": {
-            "SupportPal\\Pollcast\\": "src"
+            "SupportPal\\Pollcast\\": "src",
+            "Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
@@ -43,7 +44,10 @@
         "optimize-autoloader": true,
         "sort-packages": true,
         "platform": {
-            "php": "7.2.5"
+            "php": "8.0.2"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": false
         }
     },
     "minimum-stability": "dev",

@@ -19,8 +19,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
 
         $this->loadLaravelMigrations(['--database' => 'testing']);
 
-        $this->withFactories(__DIR__.'/../database/factories');
-
         $this->loadMigrationsFrom([
             '--database' => 'testing',
             '--path'     => realpath(__DIR__ . '/../database/migrations'),

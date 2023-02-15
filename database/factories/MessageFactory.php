@@ -1,29 +1,46 @@
 <?php declare(strict_types=1);
 
-use Faker\Generator;
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 
-if (! isset($factory)) {
-    throw new RuntimeException('Variable $factory is not defined.');
+use function fake;
+
+/**
+ * @extends Factory<Message>
+ */
+class MessageFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var class-string<Message>
+     */
+    protected $model = Message::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition()
+    {
+        $member = Member::factory()->create();
+
+        return [
+            'channel_id' => Channel::factory(),
+            'member_id'  => null,
+            'event'      => 'Illuminate\Notifications\Events\BroadcastNotificationCreated',
+            'payload'    => [
+                'title'  => 'Operator Logged In',
+                'text'   => 'John Doe has logged in to the operator panel.',
+                'id'     => fake()->uuid,
+                'type'   => 'App\\Modules\\User\\Notifications\\OperatorLogin',
+                'socket' => $member->socket_id,
+            ],
+        ];
+    }
 }
-
-$factory->define(Message::class, function (Generator $faker) {
-    $member = factory(Member::class)->create();
-
-    return [
-        'channel_id' => function () {
-            return factory(Channel::class)->create()->id;
-        },
-        'member_id'  => null,
-        'event'      => 'Illuminate\Notifications\Events\BroadcastNotificationCreated',
-        'payload'    => [
-            'title'  => 'Operator Logged In',
-            'text'   => 'John Doe has logged in to the operator panel.',
-            'id'     => $faker->uuid,
-            'type'   => 'App\\Modules\\User\\Notifications\\OperatorLogin',
-            'socket' => $member->socket_id,
-        ],
-    ];
-});

@@ -7,7 +7,7 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
-use function factory;
+use function app;
 use function json_encode;
 use function session;
 
@@ -18,7 +18,7 @@ class SocketTest extends TestCase
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $this->assertSame((new Socket($this->app['session.store']))->id(), $socketId);
+        $this->assertSame((new Socket(app('session.store')))->id(), $socketId);
     }
 
     public function testJoinChannel(): void
@@ -26,7 +26,7 @@ class SocketTest extends TestCase
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $socket = new Socket($this->app['session.store']);
+        $socket = new Socket(app('session.store'));
 
         $channelName = 'fake-channel';
         $socket->joinChannel($channelName);
@@ -44,7 +44,7 @@ class SocketTest extends TestCase
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $socket = new Socket($this->app['session.store']);
+        $socket = new Socket(app('session.store'));
 
         $data = ['user_id' => 1];
         $channelName = 'presence-channel';
@@ -79,10 +79,10 @@ class SocketTest extends TestCase
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $socket = new Socket($this->app['session.store']);
+        $socket = new Socket(app('session.store'));
 
-        $channel = factory(Channel::class)->create(['name' => 'fake-name']);
-        $member = factory(Member::class)->create(['channel_id' => $channel->id]);
+        $channel = Channel::factory()->create(['name' => 'fake-name']);
+        $member = Member::factory()->create(['channel_id' => $channel->id]);
 
         $socket->removeMemberFromChannel($member, $channel);
 
@@ -97,10 +97,10 @@ class SocketTest extends TestCase
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $socket = new Socket($this->app['session.store']);
+        $socket = new Socket(app('session.store'));
 
-        $channel = factory(Channel::class)->create(['name' => 'presence-name']);
-        $member = factory(Member::class)->create(['channel_id' => $channel->id]);
+        $channel = Channel::factory()->create(['name' => 'presence-name']);
+        $member = Member::factory()->create(['channel_id' => $channel->id]);
 
         $socket->removeMemberFromChannel($member, $channel);
 
@@ -122,11 +122,11 @@ class SocketTest extends TestCase
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $socket = new Socket($this->app['session.store']);
+        $socket = new Socket(app('session.store'));
 
-        $channel = factory(Channel::class)->create(['name' => 'private-name']);
+        $channel = Channel::factory()->create(['name' => 'private-name']);
         $data = ['user_id' => 1];
-        $member = factory(Member::class)->create(['channel_id' => $channel->id, 'data' => $data]);
+        $member = Member::factory()->create(['channel_id' => $channel->id, 'data' => $data]);
 
         $socket->removeMemberFromChannel($member, $channel);
 

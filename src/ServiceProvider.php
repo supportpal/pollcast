@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 
 use function array_merge;
+use function config;
 use function config_path;
 use function is_array;
 use function is_numeric;
@@ -45,9 +46,9 @@ class ServiceProvider extends BaseServiceProvider
      */
     protected function mergeConfigFrom($path, $key)
     {
-        $config = $this->app['config']->get($key, []);
+        $config = config()->get($key, []);
 
-        $this->app['config']->set($key, $this->mergeConfig(require $path, $config));
+        config()->set($key, $this->mergeConfig(require $path, $config));
     }
 
     /**

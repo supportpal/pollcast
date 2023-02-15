@@ -2,7 +2,10 @@
 
 namespace SupportPal\Pollcast\Model;
 
+use Database\Factories\MemberFactory;
 use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Member extends Model
 {
     use Uuid;
+    use HasFactory;
 
     /** @var string */
     protected $table = 'pollcast_channel_members';
@@ -31,15 +35,28 @@ class Member extends Model
     /** @var string[] */
     protected $fillable = ['channel_id', 'socket_id', 'data'];
 
-    /** @var string[] */
+    /** @var array<string, string> */
     protected $casts = [
         'channel_id' => 'string',
         'socket_id'  => 'string',
         'data'       => 'json',
     ];
 
+    /**
+     * @return BelongsTo<Channel, Member>
+     */
     public function channel(): BelongsTo
     {
         return $this->belongsTo(Channel::class);
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return Factory<Member>
+     */
+    protected static function newFactory()
+    {
+        return MemberFactory::new();
     }
 }

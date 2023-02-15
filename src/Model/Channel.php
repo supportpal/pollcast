@@ -2,7 +2,10 @@
 
 namespace SupportPal\Pollcast\Model;
 
+use Database\Factories\ChannelFactory;
 use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -12,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class Channel extends Model
 {
     use Uuid;
+    use HasFactory;
 
     /** @var string */
     protected $table = 'pollcast_channel';
@@ -28,8 +32,18 @@ class Channel extends Model
     /** @var string[] */
     protected $fillable = ['name'];
 
-    /** @var string[] */
+    /** @var array<string, string> */
     protected $casts = [
         'name' => 'string',
     ];
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return Factory<Channel>
+     */
+    protected static function newFactory()
+    {
+        return ChannelFactory::new();
+    }
 }

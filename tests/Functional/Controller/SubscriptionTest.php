@@ -9,7 +9,6 @@ use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
-use function factory;
 use function implode;
 use function route;
 use function session;
@@ -46,7 +45,7 @@ class SubscriptionTest extends TestCase
         [$channel,] = $this->setupChannelAndMember();
 
         $event = 'test-event';
-        $message = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
+        $message = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name => [$event]],
@@ -66,11 +65,11 @@ class SubscriptionTest extends TestCase
 
         $event1 = 'test-event';
         $event2 = 'new-event';
-        $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event1, 'created_at' => '2021-06-01 11:59:56']);
-        factory(Message::class)->create(['channel_id' => $channel->id]);
-        factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:50']);
-        $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:57']);
-        factory(Message::class)->create();
+        $message1 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event1, 'created_at' => '2021-06-01 11:59:56']);
+        Message::factory()->create(['channel_id' => $channel->id]);
+        Message::factory()->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:50']);
+        $message2 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:57']);
+        Message::factory()->create();
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name => [$event1, $event2]],
@@ -89,7 +88,7 @@ class SubscriptionTest extends TestCase
         [$channel,] = $this->setupChannelAndMember();
 
         $event = 'test-event';
-        $message = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
+        $message = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
 
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name => [$event]],
@@ -119,9 +118,9 @@ class SubscriptionTest extends TestCase
         [$channel,] = $this->setupChannelAndMember();
 
         $event = 'test-event';
-        $message1 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123456']);
-        $message2 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.023456']);
-        $message3 = factory(Message::class)->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123465']);
+        $message1 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123456']);
+        $message2 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.023456']);
+        $message3 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123465']);
 
         $params = [
             'channels' => [$channel->name => [$event]],
@@ -213,7 +212,7 @@ class SubscriptionTest extends TestCase
         $this->postAjax(route('supportpal.pollcast.receive'))
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'The given data was invalid.',
+                'message' => 'The channels field is required. (and 1 more error)',
                 'errors'  => [
                     'channels' => ['The channels field is required.'],
                     'time'     => ['The time field is required.'],
@@ -228,7 +227,7 @@ class SubscriptionTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'The given data was invalid.',
+                'message' => 'The time field is required.',
                 'errors'  => ['time' => ['The time field is required.']]
             ]);
     }
@@ -241,8 +240,8 @@ class SubscriptionTest extends TestCase
         $socketId = 'test';
         session([ Socket::UUID => $socketId ]);
 
-        $channel = factory(Channel::class)->create([ 'name' => 'public-channel' ]);
-        $member = factory(Member::class)->create([
+        $channel = Channel::factory()->create([ 'name' => 'public-channel' ]);
+        $member = Member::factory()->create([
             'channel_id' => $channel->id,
             'socket_id'  => $socketId,
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),

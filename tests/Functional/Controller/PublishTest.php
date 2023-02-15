@@ -5,7 +5,6 @@ namespace SupportPal\Pollcast\Tests\Functional\Controller;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Tests\TestCase;
 
-use function factory;
 use function json_encode;
 use function route;
 
@@ -14,7 +13,7 @@ class PublishTest extends TestCase
     public function testPublish(): void
     {
         $channelName = 'public-channel';
-        $channel = factory(Channel::class)->create(['name' => $channelName]);
+        $channel = Channel::factory()->create(['name' => $channelName]);
 
         $event = 'test-event';
         $data = ['user_id' => 1];
@@ -49,7 +48,7 @@ class PublishTest extends TestCase
         $this->postAjax(route('supportpal.pollcast.publish'))
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'The given data was invalid.',
+                'message' => 'The channel name field is required. (and 2 more errors)',
                 'errors'  => [
                     'channel_name' => ['The channel name field is required.'],
                     'event'        => ['The event field is required.'],
@@ -66,7 +65,7 @@ class PublishTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'The given data was invalid.',
+                'message' => 'The channel name field is required.',
                 'errors'  => ['channel_name' => ['The channel name field is required.']]
             ]);
     }
@@ -79,7 +78,7 @@ class PublishTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'The given data was invalid.',
+                'message' => 'The event field is required.',
                 'errors'  => ['event' => ['The event field is required.']]
             ]);
     }
@@ -92,7 +91,7 @@ class PublishTest extends TestCase
         ])
             ->assertStatus(422)
             ->assertJson([
-                'message' => 'The given data was invalid.',
+                'message' => 'The data field is required.',
                 'errors'  => ['data' => ['The data field is required.']]
             ]);
     }
