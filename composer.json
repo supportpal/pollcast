@@ -9,7 +9,7 @@
         }
     ],
     "require": {
-        "php": ">=7.2.5",
+        "php": "^7.2 || ^8.0",
         "ext-json": "*",
         "goldspecdigital/laravel-eloquent-uuid": "^6.0|^7.0|^8.0|^9.0",
         "illuminate/broadcasting": "^6.0|^7.0|^8.0|^9.0",
