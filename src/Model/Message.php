@@ -2,18 +2,12 @@
 
 namespace SupportPal\Pollcast\Model;
 
-use DateTimeImmutable;
+use Database\Factories\MessageFactory;
 use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
-
-use function phpversion;
-use function sprintf;
-use function version_compare;
 
 /**
  * @property-read string $id
@@ -25,6 +19,7 @@ use function version_compare;
 class Message extends Model
 {
     use Uuid;
+    use HasFactory;
 
     /** @var string */
     protected $table = 'pollcast_message_queue';
@@ -79,39 +74,12 @@ class Message extends Model
     }
 
     /**
-     * To get around PHP 7.2 PDO bug with fractional datetimes - https://bugs.php.net/bug.php?id=76386
-     * https://github.com/laravel/framework/issues/3506#issuecomment-383877242
+     * Create a new factory instance for the model.
      *
-     * @param  mixed  $value
-     * @return Carbon
+     * @return Factory
      */
-    protected function asDateTime($value): Carbon
+    protected static function newFactory()
     {
-        try {
-            return parent::asDateTime($value);
-        } catch (InvalidArgumentException $e) {
-            return parent::asDateTime(new DateTimeImmutable($value));
-        }
-    }
-
-    /**
-     * To get around PHP 7.2 PDO bug with fractional datetimes - https://bugs.php.net/bug.php?id=76386
-     * https://github.com/laravel/framework/issues/3506#issuecomment-383877242
-     */
-    public function newQuery(): Builder
-    {
-        $query = parent::newQuery();
-
-        if (version_compare((string) phpversion(), '7.3', '<') && $this->usesTimestamps()) {
-            $table = $this->getTable();
-            $createdAt = $this->getCreatedAtColumn();
-            $updatedAt = $this->getUpdatedAtColumn();
-
-            $query->select()
-                ->addSelect(DB::raw(sprintf('CAST(%s.%s AS CHAR) as %s', $table, $createdAt, $createdAt)))
-                ->addSelect(DB::raw(sprintf('CAST(%s.%s AS CHAR) as %s', $table, $updatedAt, $updatedAt)));
-        }
-
-        return $query;
+        return MessageFactory::new();
     }
 }

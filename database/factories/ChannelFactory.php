@@ -1,14 +1,30 @@
 <?php declare(strict_types=1);
 
-use Faker\Generator;
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
 use SupportPal\Pollcast\Model\Channel;
 
-if (! isset($factory)) {
-    throw new RuntimeException('Variable $factory is not defined.');
-}
+use function fake;
 
-$factory->define(Channel::class, function (Generator $faker) {
-    return [
-        'name' => $faker->name,
-    ];
-});
+class ChannelFactory extends Factory
+{
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
+    protected $model = Channel::class;
+
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        return [
+            'name' => fake()->name(),
+        ];
+    }
+}

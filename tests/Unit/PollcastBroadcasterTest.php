@@ -4,6 +4,7 @@ namespace SupportPal\Pollcast\Tests\Unit;
 
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
+use Orchestra\Testbench\Factories\UserFactory;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -13,7 +14,6 @@ use SupportPal\Pollcast\Tests\TestCase;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 use function config;
-use function factory;
 use function json_encode;
 use function request;
 use function session;
@@ -119,38 +119,38 @@ class PollcastBroadcasterTest extends TestCase
         $broadcaster = $this->setupBroadcaster();
 
         $channelName1 = 'public-channel';
-        $channel1 = factory(Channel::class)->create([
+        $channel1 = Channel::factory()->create([
             'name'       => $channelName1,
             'updated_at' => Carbon::now()->subDays(2)->toDateTimeString()
         ]);
 
         $channelName2 = 'private-channel';
-        $channel2 = factory(Channel::class)->create([
+        $channel2 = Channel::factory()->create([
             'name'       => $channelName2,
             'updated_at' => Carbon::now()->subDay()->toDateTimeString()
         ]);
 
-        $member1 = factory(Member::class)->create([
+        $member1 = Member::factory()->create([
             'channel_id' => $channel2->id,
             'updated_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
             'data'       => ['member1']
         ]);
-        $member2 = factory(Member::class)->create([
+        $member2 = Member::factory()->create([
             'channel_id' => $channel2->id,
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
             'data'       => ['member2']
         ]);
-        $member3 = factory(Member::class)->create([
+        $member3 = Member::factory()->create([
             'channel_id' => $channel1->id,
             'updated_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
             'data'       => ['member3']
         ]);
 
-        $message1 = factory(Message::class)->create([
+        $message1 = Message::factory()->create([
             'channel_id' => $channel2->id,
             'created_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
-        $message2 = factory(Message::class)->create([
+        $message2 = Message::factory()->create([
             'channel_id' => $channel2->id,
             'created_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
         ]);
@@ -178,30 +178,30 @@ class PollcastBroadcasterTest extends TestCase
 
         $broadcaster = $this->setupBroadcaster();
 
-        $channel = factory(Channel::class)->create();
+        $channel = Channel::factory()->create();
 
-        $member1 = factory(Member::class)->create([
+        $member1 = Member::factory()->create([
             'channel_id' => $channel->id,
             'updated_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
         ]);
-        $member2 = factory(Member::class)->create([
+        $member2 = Member::factory()->create([
             'channel_id' => $channel->id,
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
-        $member3 = factory(Member::class)->create([
+        $member3 = Member::factory()->create([
             'channel_id' => $channel->id,
             'updated_at' => Carbon::now()->subSeconds(65)->toDateTimeString(),
         ]);
 
-        $message1 = factory(Message::class)->create([
+        $message1 = Message::factory()->create([
             'channel_id' => $channel->id,
             'created_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
-        $message2 = factory(Message::class)->create([
+        $message2 = Message::factory()->create([
             'channel_id' => $channel->id,
             'created_at' => Carbon::now()->subSeconds(143)->toDateTimeString(),
         ]);
-        $message3 = factory(Message::class)->create([
+        $message3 = Message::factory()->create([
             'channel_id' => $channel->id,
             'created_at' => Carbon::now()->subSeconds(45)->toDateTimeString(),
         ]);
@@ -223,10 +223,10 @@ class PollcastBroadcasterTest extends TestCase
 
         $broadcaster = $this->setupBroadcaster();
 
-        $channel1 = factory(Channel::class)->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
-        $channel2 = factory(Channel::class)->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
+        $channel1 = Channel::factory()->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
+        $channel2 = Channel::factory()->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
 
-        $member = factory(Member::class)->create([
+        $member = Member::factory()->create([
             'channel_id' => $channel1->id,
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
@@ -255,7 +255,7 @@ class PollcastBroadcasterTest extends TestCase
      */
     private function setupRequest(string $channelName): array
     {
-        $user = factory(User::class)->create();
+        $user = UserFactory::new()->create();
         $this->actingAs($user);
 
         $request = request()->merge(['channel_name' => $channelName]);

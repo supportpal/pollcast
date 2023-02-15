@@ -29,7 +29,8 @@
     },
     "autoload": {
         "psr-4": {
-            "SupportPal\\Pollcast\\": "src"
+            "SupportPal\\Pollcast\\": "src",
+            "Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {

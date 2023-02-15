@@ -8,7 +8,6 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
-use function factory;
 use function now;
 use function route;
 use function session;
@@ -50,8 +49,8 @@ class VerifySocketIdMiddlewareTest extends TestCase
         $socketId = 'test';
         session([ Socket::UUID => $socketId ]);
 
-        $channel = factory(Channel::class)->create([ 'name' => 'public-channel' ]);
-        factory(Member::class)->create([ 'channel_id' => $channel->id, 'socket_id' => $socketId ]);
+        $channel = Channel::factory()->create([ 'name' => 'public-channel' ]);
+        Member::factory()->create([ 'channel_id' => $channel->id, 'socket_id' => $socketId ]);
 
         return $channel;
     }
