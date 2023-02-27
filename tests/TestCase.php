@@ -28,7 +28,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Get the service provider class.
      */
-    protected function getServiceProviderClass(): string
+    protected static function getServiceProviderClass(): string
     {
         return ServiceProvider::class;
     }

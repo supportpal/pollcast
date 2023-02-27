@@ -9,21 +9,21 @@
         }
     ],
     "require": {
-        "php": "^8.0",
+        "php": "^8.1",
         "ext-json": "*",
-        "goldspecdigital/laravel-eloquent-uuid": "^9.0",
-        "illuminate/broadcasting": "^9.0",
-        "illuminate/database": "^9.0",
-        "illuminate/http": "^9.0",
-        "illuminate/session": "^9.0",
-        "illuminate/support": "^9.0"
+        "goldspecdigital/laravel-eloquent-uuid": "^10.0",
+        "illuminate/broadcasting": "^10.0",
+        "illuminate/database": "^10.0",
+        "illuminate/http": "^10.0",
+        "illuminate/session": "^10.0",
+        "illuminate/support": "^10.0"
     },
     "require-dev": {
-        "graham-campbell/testbench": "^5.4",
+        "graham-campbell/testbench": "^6.0",
         "nunomaduro/larastan": "^2.0",
         "phpstan/phpstan": "^1.0",
         "phpstan/phpstan-mockery": "^1.1",
-        "phpunit/phpunit": "^9.6",
+        "phpunit/phpunit": "^10.0",
         "rregeer/phpunit-coverage-check": "^0.3.1",
         "supportpal/coding-standard": "^0.4.0"
     },
@@ -43,15 +43,10 @@
         "secure-http": false,
         "optimize-autoloader": true,
         "sort-packages": true,
-        "platform": {
-            "php": "8.0.2"
-        },
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": false
         }
     },
-    "minimum-stability": "dev",
-    "prefer-stable": true,
     "extra": {
         "laravel": {
             "providers": [
