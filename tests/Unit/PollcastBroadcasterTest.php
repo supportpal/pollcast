@@ -34,7 +34,43 @@ class PollcastBroadcasterTest extends TestCase
 
         $this->assertEquals([
             'user_id' => $user->id,
+            'user_info' => true
+        ], $broadcaster->auth($request));
+    }
+
+    public function testAuthUserInfo(): void
+    {
+        $broadcaster = $this->setupBroadcaster();
+
+        $channelName = 'fake-channel';
+        $broadcaster->channel($channelName, function (User $user) {
+            return $user;
+        });
+
+        [$user, $request] = $this->setupRequest($channelName);
+
+        $this->assertEquals([
+            'user_id' => $user->id,
             'user_info' => $user
+        ], $broadcaster->auth($request));
+    }
+
+    public function testAuthUserInfoCustom(): void
+    {
+        $data = ['data' => '1234'];
+
+        $broadcaster = $this->setupBroadcaster();
+
+        $channelName = 'fake-channel';
+        $broadcaster->channel($channelName, function () use ($data) {
+            return $data;
+        });
+
+        [$user, $request] = $this->setupRequest($channelName);
+
+        $this->assertEquals([
+            'user_id' => $user->id,
+            'user_info' => $data
         ], $broadcaster->auth($request));
     }
 
