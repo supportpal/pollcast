@@ -67,7 +67,7 @@ class PollcastBroadcaster extends Broadcaster
 
         return [
             'user_id'   => $user->getAuthIdentifier(),
-            'user_info' => $user,
+            'user_info' => $result,
         ];
     }
 
