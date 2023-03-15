@@ -58,8 +58,8 @@ class SubscriptionController
     protected function getAuthorisedChannels(): Collection
     {
         return Member::query()
-            ->where('socket_id', $this->socket->id())
-            ->join('pollcast_channel', 'channel_id', '=', 'pollcast_channel.id')
+            ->where('pollcast_channel_members.socket_id', $this->socket->id())
+            ->join('pollcast_channel', 'pollcast_channel_members.channel_id', '=', 'pollcast_channel.id')
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
 
