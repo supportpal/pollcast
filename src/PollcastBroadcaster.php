@@ -40,7 +40,7 @@ class PollcastBroadcaster extends Broadcaster
      * @param mixed|Request $request
      * @return mixed
      */
-    public function auth($request)
+    public function auth(mixed $request)
     {
         $channelName = $this->normalizeChannelName($request->channel_name);
 
@@ -60,7 +60,7 @@ class PollcastBroadcaster extends Broadcaster
      * @param mixed $result
      * @return mixed[]
      */
-    public function validAuthenticationResponse($request, $result)
+    public function validAuthenticationResponse(mixed $request, mixed $result)
     {
         $channelName = $this->normalizeChannelName($request->channel_name);
         $user        = $this->retrieveUser($request, $channelName);
@@ -79,7 +79,7 @@ class PollcastBroadcaster extends Broadcaster
      * @param  mixed[] $payload
      * @return void
      */
-    public function broadcast(array $channels, $event, array $payload = [])
+    public function broadcast(array $channels, mixed $event, array $payload = [])
     {
         if ($this->hitsLottery()) {
             $this->gc();

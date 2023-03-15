@@ -20,12 +20,11 @@
     },
     "require-dev": {
         "graham-campbell/testbench": "^6.0",
-        "nunomaduro/larastan": "^2.0",
-        "phpstan/phpstan": "^1.0",
-        "phpstan/phpstan-mockery": "^1.1",
+        "nunomaduro/larastan": "2.5.1",
+        "phpstan/phpstan-mockery": "1.1.1",
         "phpunit/phpunit": "^10.0",
         "rregeer/phpunit-coverage-check": "^0.3.1",
-        "supportpal/coding-standard": "^0.4.0"
+        "supportpal/coding-standard": "0.4.4"
     },
     "autoload": {
         "psr-4": {

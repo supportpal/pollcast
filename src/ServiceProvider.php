@@ -44,7 +44,7 @@ class ServiceProvider extends BaseServiceProvider
      * @param  string|mixed $key
      * @return void
      */
-    protected function mergeConfigFrom($path, $key)
+    protected function mergeConfigFrom(mixed $path, mixed $key)
     {
         $config = config()->get($key, []);
 

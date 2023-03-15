@@ -40,7 +40,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @return string[]
      */
-    protected function getApplicationAliases($app): array
+    protected function getApplicationAliases(mixed $app): array
     {
         return [];
     }
@@ -52,7 +52,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @return string[]
      */
-    protected function getPackageProviders($app): array
+    protected function getPackageProviders(mixed $app): array
     {
         return [ServiceProvider::class];
     }
@@ -64,7 +64,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @return void
      */
-    protected function getEnvironmentSetUp($app)
+    protected function getEnvironmentSetUp(mixed $app)
     {
         $app['config']->set('app.key', 'slHhRrJMrmlsM6oC0L1fJp5n4QS8pg7m');
         $app['config']->set('database.default', 'testing');
