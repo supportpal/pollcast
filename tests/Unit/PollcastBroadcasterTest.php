@@ -117,37 +117,6 @@ class PollcastBroadcasterTest extends TestCase
         $this->assertDatabaseCount('pollcast_message_queue', 2);
     }
 
-    public function testBroadcastWithoutSocket(): void
-    {
-        $date = '2021-06-01 12:00:00';
-        Carbon::setTestNow(Carbon::parse($date));
-
-        $broadcaster = $this->setupBroadcaster();
-
-        $channelName1 = 'public-channel';
-        $channelName2 = 'private-channel';
-        $userFunction = function (User $user) {
-            return true;
-        };
-        $broadcaster->channel($channelName1, $userFunction);
-        $broadcaster->channel($channelName2, $userFunction);
-
-        $eventName = 'test-event';
-        $broadcaster->broadcast([$channelName1, $channelName2], $eventName, []);
-
-        $channels = Channel::get();
-        foreach ($channels as $channel) {
-            $this->assertDatabaseHas('pollcast_message_queue', [
-                'channel_id' => $channel->id,
-                'member_id'  => null,
-                'event'      => $eventName,
-                'payload'    => json_encode(['socket' => 'test']),
-            ]);
-        }
-
-        $this->assertDatabaseCount('pollcast_message_queue', 2);
-    }
-
     public function testBroadcastGarbageCollection(): void
     {
         // Update lottery so garbage collection always runs.

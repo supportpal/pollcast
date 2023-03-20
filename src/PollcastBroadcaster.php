@@ -5,7 +5,6 @@ namespace SupportPal\Pollcast;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Broadcasting\Socket;
@@ -83,10 +82,6 @@ class PollcastBroadcaster extends Broadcaster
     {
         if ($this->hitsLottery()) {
             $this->gc();
-        }
-
-        if (Arr::get($payload, 'socket') === null) {
-            $payload['socket'] = $this->socket->id();
         }
 
         $messages = new Collection;
