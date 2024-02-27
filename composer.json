@@ -20,7 +20,7 @@
     },
     "require-dev": {
         "graham-campbell/testbench": "^6.0",
-        "nunomaduro/larastan": "2.6.3",
+        "nunomaduro/larastan": "2.9.1",
         "phpstan/phpstan-mockery": "1.1.1",
         "phpunit/phpunit": "^10.0",
         "rregeer/phpunit-coverage-check": "^0.3.1",
