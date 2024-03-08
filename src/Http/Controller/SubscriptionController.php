@@ -33,7 +33,7 @@ class SubscriptionController
         $memberQuery = Member::query()->where('socket_id', $this->socket->id());
         $members = $memberQuery->get();
         if ($members->isEmpty()) {
-            throw (new ModelNotFoundException)->setModel(Member::class);
+            return new JsonResponse(['status' => 'error']);
         }
 
         // Update the last active time of the member.

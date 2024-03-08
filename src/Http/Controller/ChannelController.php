@@ -60,13 +60,21 @@ class ChannelController extends BroadcastController
         /** @var Channel $channel */
         $channel = Channel::query()
             ->where('name', $request->channel_name)
-            ->firstOrFail();
+            ->first();
+
+        if ($channel === null) {
+            return new JsonResponse([false]);
+        }
 
         /** @var Member $member */
         $member = Member::query()
             ->where('channel_id', $channel->id)
             ->where('socket_id', $this->socket->id())
-            ->firstOrFail();
+            ->first();
+
+        if ($member === null) {
+            return new JsonResponse([false]);
+        }
 
         $this->socket->removeMemberFromChannel($member, $channel);
 
