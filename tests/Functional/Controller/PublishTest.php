@@ -40,7 +40,8 @@ class PublishTest extends TestCase
             'event'        => 'test-event',
             'data'         => ['user_id' => 1],
         ])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertJson([false]);
     }
 
     public function testPublishValidation(): void
