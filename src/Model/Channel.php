@@ -29,7 +29,7 @@ class Channel extends Model
     /** @var string[] */
     protected $guarded = [];
 
-    /** @var string[] */
+    /** @var array<int, string> */
     protected $fillable = ['name'];
 
     /** @var array<string, string> */

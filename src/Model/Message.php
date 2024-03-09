@@ -33,7 +33,7 @@ class Message extends Model
     /** @var string[] */
     protected $guarded = [];
 
-    /** @var string[] */
+    /** @var array<int, string> */
     protected $fillable = ['channel_id', 'member_id', 'event', 'payload'];
 
     /** @var array<string, string> */
