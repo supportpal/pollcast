@@ -2,7 +2,6 @@
 
 namespace SupportPal\Pollcast\Http\Controller;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -33,7 +32,7 @@ class SubscriptionController
         $memberQuery = Member::query()->where('socket_id', $this->socket->id());
         $members = $memberQuery->get();
         if ($members->isEmpty()) {
-            throw (new ModelNotFoundException)->setModel(Member::class);
+            return new JsonResponse(['status' => 'error']);
         }
 
         // Update the last active time of the member.

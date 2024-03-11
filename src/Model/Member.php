@@ -32,7 +32,7 @@ class Member extends Model
     /** @var string[] */
     protected $guarded = [];
 
-    /** @var string[] */
+    /** @var array<int, string> */
     protected $fillable = ['channel_id', 'socket_id', 'data'];
 
     /** @var array<string, string> */

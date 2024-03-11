@@ -204,7 +204,8 @@ class SubscriptionTest extends TestCase
             'channels' => ['fake-channel'],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertJson(['status' => 'error']);
     }
 
     public function testMessagesValidation(): void

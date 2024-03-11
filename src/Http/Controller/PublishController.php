@@ -14,9 +14,14 @@ class PublishController
      */
     public function publish(PublishRequest $request): JsonResponse
     {
+        /** @var Channel|null $channel */
         $channel = Channel::query()
             ->where('name', $request->channel_name)
-            ->firstOrFail();
+            ->first();
+
+        if ($channel === null) {
+            return new JsonResponse([false]);
+        }
 
         (new Message([
             'channel_id' => $channel->id,

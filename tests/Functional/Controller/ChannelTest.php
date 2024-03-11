@@ -130,7 +130,8 @@ class ChannelTest extends TestCase
     public function testUnsubscribeChannelNotFound(): void
     {
         $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => 'fake-channel'])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertJson([false]);
     }
 
     public function testUnsubscribeMemberNotFound(): void
@@ -139,7 +140,8 @@ class ChannelTest extends TestCase
         $this->setupChannel($channelName);
 
         $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertJson([false]);
     }
 
     public function testUnsubscribeMemberDifferentSocketId(): void
@@ -150,7 +152,8 @@ class ChannelTest extends TestCase
         Member::factory()->create(['channel_id' => $channel->id]);
 
         $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
-            ->assertStatus(404);
+            ->assertStatus(200)
+            ->assertJson([false]);
     }
 
     /**

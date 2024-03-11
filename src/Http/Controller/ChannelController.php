@@ -57,16 +57,24 @@ class ChannelController extends BroadcastController
 
     public function unsubscribe(UnsubscribeRequest $request): JsonResponse
     {
-        /** @var Channel $channel */
+        /** @var Channel|null $channel */
         $channel = Channel::query()
             ->where('name', $request->channel_name)
-            ->firstOrFail();
+            ->first();
 
-        /** @var Member $member */
+        if ($channel === null) {
+            return new JsonResponse([false]);
+        }
+
+        /** @var Member|null $member */
         $member = Member::query()
             ->where('channel_id', $channel->id)
             ->where('socket_id', $this->socket->id())
-            ->firstOrFail();
+            ->first();
+
+        if ($member === null) {
+            return new JsonResponse([false]);
+        }
 
         $this->socket->removeMemberFromChannel($member, $channel);
 
