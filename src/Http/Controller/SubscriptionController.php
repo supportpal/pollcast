@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\LazyCollection;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Member;
@@ -16,6 +17,8 @@ class SubscriptionController
 {
     /** @var Socket */
     private $socket;
+
+    private int $messagesFound = 0;
 
     public function __construct(Socket $socket)
     {
@@ -65,14 +68,14 @@ class SubscriptionController
     /**
      * @param Collection<int, Member> $members
      * @param Collection<string, string> $channels
-     * @return Collection<int, Message>
+     * @return LazyCollection<int, Message>
      */
     protected function getMessagesForRequest(
         Carbon $time,
         Collection $members,
         Request $request,
         Collection $channels
-    ): Collection {
+    ): LazyCollection {
         return Message::query()
             ->with('channel')
             ->where('created_at', '>=', $request->get('time'))
@@ -93,10 +96,21 @@ class SubscriptionController
                 });
             })
             ->orderBy('created_at')
-            ->get()
+            ->lazy(100)
             // Remove events triggered by the same member (prevent unnecessary events).
             ->filter(function (Message $message) {
-                return Arr::get($message->payload, 'socket') !== $this->socket->id();
+                if ($this->messagesFound >= 10) {
+                    return false;
+                }
+
+                $sameSocket = Arr::get($message->payload, 'socket') === $this->socket->id();
+
+                if ($sameSocket) {
+                    return false;
+                }
+
+                $this->messagesFound++;
+                return true;
             });
     }
 }
