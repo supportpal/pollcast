@@ -3,7 +3,7 @@
 namespace SupportPal\Pollcast\Model;
 
 use Database\Factories\MemberFactory;
-use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,8 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Member extends Model
 {
-    use Uuid;
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     /** @var string */
     protected $table = 'pollcast_channel_members';

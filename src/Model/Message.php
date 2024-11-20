@@ -3,7 +3,7 @@
 namespace SupportPal\Pollcast\Model;
 
 use Database\Factories\MessageFactory;
-use GoldSpecDigital\LaravelEloquentUUID\Database\Eloquent\Uuid;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,8 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Message extends Model
 {
-    use Uuid;
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     /** @var string */
     protected $table = 'pollcast_message_queue';
@@ -65,7 +64,7 @@ class Message extends Model
 
     public function setUuid(): self
     {
-        $this->{$this->getKeyName()} = $this->generateUuid();
+        $this->{$this->getKeyName()} = $this->newUniqueId();
 
         return $this;
     }
