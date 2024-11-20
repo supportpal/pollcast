@@ -22,7 +22,7 @@
         "graham-campbell/testbench": "^6.0",
         "nunomaduro/larastan": "2.9.2",
         "phpstan/phpstan-mockery": "1.1.2",
-        "phpunit/phpunit": "^10.0",
+        "phpunit/phpunit": "^11.2",
         "rregeer/phpunit-coverage-check": "^0.3.1",
         "supportpal/coding-standard": "0.4.4"
     },
