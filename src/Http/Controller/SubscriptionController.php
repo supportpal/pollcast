@@ -99,17 +99,12 @@ class SubscriptionController
             ->lazy(100)
             // Remove events triggered by the same member (prevent unnecessary events).
             ->filter(function (Message $message) {
-                if ($this->messagesFound >= 10) {
-                    return false;
-                }
-
-                $sameSocket = Arr::get($message->payload, 'socket') === $this->socket->id();
-
-                if ($sameSocket) {
+                if ($this->messagesFound >= 10 || Arr::get($message->payload, 'socket') === $this->socket->id()) {
                     return false;
                 }
 
                 $this->messagesFound++;
+
                 return true;
             });
     }
