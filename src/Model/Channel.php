@@ -3,7 +3,7 @@
 namespace SupportPal\Pollcast\Model;
 
 use Database\Factories\ChannelFactory;
-use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Channel extends Model
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUuids;
 
     /** @var string */
     protected $table = 'pollcast_channel';
