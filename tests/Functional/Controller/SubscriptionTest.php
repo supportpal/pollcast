@@ -83,6 +83,27 @@ class SubscriptionTest extends TestCase
             ]);
     }
 
+    public function testMessagesMax10(): void
+    {
+        [$channel,] = $this->setupChannelAndMember();
+
+        $event = 'test-event';
+        $messages = Message::factory()
+            ->count(15)
+            ->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56']);
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => [$event]],
+            'time'     => '2021-06-01 11:59:55',
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
+                'events' => $messages->load('channel')->take(10)->toArray(),
+            ]);
+    }
+
     public function testMessagesNotDuplicated(): void
     {
         [$channel,] = $this->setupChannelAndMember();
