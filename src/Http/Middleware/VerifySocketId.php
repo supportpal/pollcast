@@ -9,12 +9,9 @@ use SupportPal\Pollcast\Broadcasting\Socket;
 
 class VerifySocketId
 {
-    /** @var Socket */
-    private $socket;
-
-    public function __construct(Socket $socket)
+    public function __construct(private readonly Socket $socket)
     {
-        $this->socket = $socket;
+        //
     }
 
     /**
@@ -22,7 +19,7 @@ class VerifySocketId
      */
     public function handle(Request $request, Closure $next)
     {
-        if ($this->socket->id() === null) {
+        if (! $this->socket->hasId()) {
             throw new UnauthorizedException;
         }
 

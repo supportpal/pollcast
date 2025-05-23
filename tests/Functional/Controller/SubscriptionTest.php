@@ -3,7 +3,6 @@
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
 use Illuminate\Support\Carbon;
-use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
@@ -11,11 +10,12 @@ use SupportPal\Pollcast\Tests\TestCase;
 
 use function implode;
 use function route;
-use function session;
 use function vsprintf;
 
 class SubscriptionTest extends TestCase
 {
+    private string $socketId = 'test';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -28,7 +28,8 @@ class SubscriptionTest extends TestCase
     {
         [$channel,] = $this->setupChannelAndMember();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel->name],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
@@ -47,7 +48,8 @@ class SubscriptionTest extends TestCase
         $event = 'test-event';
         $message = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel->name => [$event]],
             'time'     => '2021-06-01 11:59:55',
         ])
@@ -71,7 +73,8 @@ class SubscriptionTest extends TestCase
         $message2 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event2, 'created_at' => '2021-06-01 11:59:57']);
         Message::factory()->create();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel->name => [$event1, $event2]],
             'time'     => '2021-06-01 11:59:55',
         ])
@@ -92,7 +95,8 @@ class SubscriptionTest extends TestCase
             ->count(15)
             ->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56']);
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel->name => [$event]],
             'time'     => '2021-06-01 11:59:55',
         ])
@@ -111,7 +115,8 @@ class SubscriptionTest extends TestCase
         $event = 'test-event';
         $message = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:57']);
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel->name => [$event]],
             'time'     => '2021-06-01 11:59:55',
         ])
@@ -122,7 +127,7 @@ class SubscriptionTest extends TestCase
                 'events' => [$message->load('channel')->toArray()],
             ]);
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $this->postAjax($route, [
             'channels' => [$channel->name => [$event]],
             'time'     => $time,
         ])
@@ -143,11 +148,12 @@ class SubscriptionTest extends TestCase
         $message2 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.023456']);
         $message3 = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56.123465']);
 
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
         $params = [
             'channels' => [$channel->name => [$event]],
             'time'     => '2021-06-01 11:59:55',
         ];
-        $response = $this->postAjax(route('supportpal.pollcast.receive'), $params)
+        $response = $this->postAjax($route, $params)
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
@@ -176,7 +182,8 @@ class SubscriptionTest extends TestCase
     {
         [$channel, $member] = $this->setupChannelAndMember();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel->name],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
@@ -198,7 +205,8 @@ class SubscriptionTest extends TestCase
         [$channel1, $member1] = $this->setupChannelAndMember();
         [$channel2, $member2] = $this->setupChannelAndMember();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => [$channel1->name, $channel2->name],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
@@ -221,7 +229,8 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesMemberNotFound(): void
     {
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => ['fake-channel'],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
@@ -231,7 +240,8 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesValidation(): void
     {
-        $this->postAjax(route('supportpal.pollcast.receive'))
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route)
             ->assertStatus(422)
             ->assertJson([
                 'message' => 'The channels field is required. (and 1 more error)',
@@ -244,7 +254,8 @@ class SubscriptionTest extends TestCase
 
     public function testMessagesChannelsValidation(): void
     {
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->postAjax($route, [
             'channels' => ['fake-channel'],
         ])
             ->assertStatus(422)
@@ -259,13 +270,10 @@ class SubscriptionTest extends TestCase
      */
     private function setupChannelAndMember(): array
     {
-        $socketId = 'test';
-        session([ Socket::UUID => $socketId ]);
-
         $channel = Channel::factory()->create([ 'name' => 'public-channel' ]);
         $member = Member::factory()->create([
             'channel_id' => $channel->id,
-            'socket_id'  => $socketId,
+            'socket_id'  => $this->socketId,
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
 

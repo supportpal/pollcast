@@ -20,19 +20,16 @@ class ChannelController extends BroadcastController
 {
     use UsePusherChannelConventions;
 
-    /** @var Socket */
-    private $socket;
-
-    public function __construct(Socket $socket)
+    public function __construct(private readonly Socket $socket)
     {
-        $this->socket = $socket;
+        //
     }
 
     public function connect(): JsonResponse
     {
         return new JsonResponse([
             'status' => 'success',
-            'id'     => $this->socket->id(),
+            'id'     => $this->socket->createIdIfNotExists(),
             'time'   => Carbon::now()->toDateTimeString()
         ]);
     }
@@ -69,7 +66,7 @@ class ChannelController extends BroadcastController
         /** @var Member|null $member */
         $member = Member::query()
             ->where('channel_id', $channel->id)
-            ->where('socket_id', $this->socket->id())
+            ->where('socket_id', $this->socket->getIdFromRequest())
             ->first();
 
         if ($member === null) {
@@ -97,7 +94,7 @@ class ChannelController extends BroadcastController
         /** @var Member|null $member */
         $member = Member::query()
             ->where('channel_id', $channel->id)
-            ->where('socket_id', $this->socket->id())
+            ->where('socket_id', $this->socket->getIdFromRequest())
             ->first();
         if ($member === null) {
             throw $e;
