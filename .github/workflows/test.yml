@@ -30,7 +30,7 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Select Laravel 10
-        uses: nick-invision/retry@v3.0.0
+        uses: nick-invision/retry@v3.0.2
         with:
           timeout_minutes: 5
           max_attempts: 5
@@ -38,7 +38,7 @@ jobs:
         if: "matrix.laravel == '10'"
 
       - name: Install dependencies
-        uses: nick-invision/retry@v3.0.0
+        uses: nick-invision/retry@v3.0.2
         with:
           timeout_minutes: 5
           max_attempts: 5
