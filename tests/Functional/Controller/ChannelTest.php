@@ -25,7 +25,7 @@ class ChannelTest extends TestCase
         $socketMock = Mockery::mock(Socket::class)->makePartial();
         $socketMock->shouldReceive('hasId')->once()->andReturnFalse();
         $socketMock->shouldReceive('createId')->once()->andReturn($id = 'test');
-        $this->app->bind(Socket::class, fn () => $socketMock);
+        $this->app?->bind(Socket::class, fn () => $socketMock);
 
         $this->postAjax(route('supportpal.pollcast.connect'))
             ->assertStatus(200)
