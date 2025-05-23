@@ -5,6 +5,7 @@ namespace SupportPal\Pollcast\Tests\Functional\Controller;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Broadcast;
+use Mockery;
 use Orchestra\Testbench\Factories\UserFactory;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
@@ -13,7 +14,6 @@ use SupportPal\Pollcast\Tests\TestCase;
 
 use function json_encode;
 use function route;
-use function session;
 
 class ChannelTest extends TestCase
 {
@@ -22,18 +22,24 @@ class ChannelTest extends TestCase
         $date = '2021-06-01 00:00:00';
         Carbon::setTestNow(Carbon::parse($date));
 
+        $socketMock = Mockery::mock(Socket::class)->makePartial();
+        $socketMock->shouldReceive('hasId')->once()->andReturnFalse();
+        $socketMock->shouldReceive('createId')->once()->andReturn($id = 'test');
+        $this->app->bind(Socket::class, fn () => $socketMock);
+
         $this->postAjax(route('supportpal.pollcast.connect'))
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'id'     => session(Socket::UUID),
+                'id'     => $id,
                 'time'   => $date
             ]);
     }
 
     public function testSubscribe(): void
     {
-        $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'public-channel'])
+        $route = route('supportpal.pollcast.subscribe', ['id' => 'test']);
+        $this->postAjax($route, ['channel_name' => 'public-channel'])
             ->assertStatus(200)
             ->assertJson([true]);
     }
@@ -47,16 +53,18 @@ class ChannelTest extends TestCase
 
         /** @var User $user */
         $user = UserFactory::new()->create();
+        $route = route('supportpal.pollcast.subscribe', ['id' => 'test']);
 
         $this->actingAs($user)
-            ->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'presence-' . $channelName])
+            ->postAjax($route, ['channel_name' => 'presence-' . $channelName])
             ->assertStatus(200)
             ->assertJson([true]);
     }
 
     public function testSubscribeChannelAuthErrorChannelNotFound(): void
     {
-        $this->post(route('supportpal.pollcast.subscribe'), ['channel_name' => 'private-channel'])
+        $route = route('supportpal.pollcast.subscribe', ['id' => 'test']);
+        $this->post($route, ['channel_name' => 'private-channel'])
             ->assertStatus(403);
     }
 
@@ -65,7 +73,8 @@ class ChannelTest extends TestCase
         $channelName = 'private-channel';
         Channel::factory()->create(['name' => $channelName]);
 
-        $this->post(route('supportpal.pollcast.subscribe'), ['channel_name' => $channelName])
+        $route = route('supportpal.pollcast.subscribe', ['id' => 'test']);
+        $this->post($route, ['channel_name' => $channelName])
             ->assertStatus(403);
     }
 
@@ -77,21 +86,23 @@ class ChannelTest extends TestCase
             return false;
         });
 
-        $socketId = 'test';
-        session([ Socket::UUID => $socketId ]);
-        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId]);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId = 'test']);
 
         /** @var User $user */
         $user = UserFactory::new()->create();
 
         $this->actingAs($user)
-            ->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'presence-' . $channelName])
+            ->postAjax(
+                route('supportpal.pollcast.subscribe', ['id' => $socketId]),
+                ['channel_name' => 'presence-' . $channelName]
+            )
             ->assertStatus(403);
     }
 
     public function testSubscribeChannelValidation(): void
     {
-        $this->postAjax(route('supportpal.pollcast.subscribe'))
+        $route = route('supportpal.pollcast.subscribe', ['id' => 'test']);
+        $this->postAjax($route)
             ->assertStatus(422)
             ->assertJson([
                 'message' => 'The channel name field is required.',
@@ -103,12 +114,10 @@ class ChannelTest extends TestCase
     {
         $channel = $this->setupChannel($channelName);
 
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId = 'test']);
 
-        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId]);
-
-        $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
+        $route = route('supportpal.pollcast.unsubscribe', ['id' => $socketId]);
+        $this->postAjax($route, ['channel_name' => $channelName])
             ->assertStatus(200)
             ->assertJson([true]);
 
@@ -129,7 +138,8 @@ class ChannelTest extends TestCase
 
     public function testUnsubscribeChannelNotFound(): void
     {
-        $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => 'fake-channel'])
+        $route = route('supportpal.pollcast.unsubscribe', ['id' => 'test']);
+        $this->postAjax($route, ['channel_name' => 'fake-channel'])
             ->assertStatus(200)
             ->assertJson([false]);
     }
@@ -139,7 +149,8 @@ class ChannelTest extends TestCase
         $channelName = 'public-channel';
         $this->setupChannel($channelName);
 
-        $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
+        $route = route('supportpal.pollcast.unsubscribe', ['id' => 'test']);
+        $this->postAjax($route, ['channel_name' => $channelName])
             ->assertStatus(200)
             ->assertJson([false]);
     }
@@ -151,7 +162,8 @@ class ChannelTest extends TestCase
 
         Member::factory()->create(['channel_id' => $channel->id]);
 
-        $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
+        $route = route('supportpal.pollcast.unsubscribe', ['id' => 'test']);
+        $this->postAjax($route, ['channel_name' => $channelName])
             ->assertStatus(200)
             ->assertJson([false]);
     }

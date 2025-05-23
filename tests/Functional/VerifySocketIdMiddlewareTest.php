@@ -15,11 +15,14 @@ use function session;
 
 class VerifySocketIdMiddlewareTest extends TestCase
 {
+    private string $socketId = 'test';
+
     public function testValidSession(): void
     {
         $channel = $this->setupChannelAndMember();
 
-        $this->post(route('supportpal.pollcast.receive'), [
+        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
+        $this->post($route, [
             'channels' => [$channel->name],
             'time'     => now()->toDateTimeString()
         ])
@@ -30,14 +33,6 @@ class VerifySocketIdMiddlewareTest extends TestCase
     {
         $channel = $this->setupChannelAndMember();
 
-        app()->bind(Socket::class, function () {
-            $mock = Mockery::mock(Socket::class);
-            $mock->shouldReceive('id')
-                ->andReturnNull();
-
-            return $mock;
-        });
-
         $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
             'time'     => now()->toDateTimeString()
@@ -47,11 +42,8 @@ class VerifySocketIdMiddlewareTest extends TestCase
 
     private function setupChannelAndMember(): Channel
     {
-        $socketId = 'test';
-        session([ Socket::UUID => $socketId ]);
-
         $channel = Channel::factory()->create([ 'name' => 'public-channel' ]);
-        Member::factory()->create([ 'channel_id' => $channel->id, 'socket_id' => $socketId ]);
+        Member::factory()->create([ 'channel_id' => $channel->id, 'socket_id' => $this->socketId ]);
 
         return $channel;
     }

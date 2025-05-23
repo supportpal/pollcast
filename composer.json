@@ -14,7 +14,6 @@
         "illuminate/broadcasting": "^10.0|^11.0",
         "illuminate/database": "^10.0|^11.0",
         "illuminate/http": "^10.0|^11.0",
-        "illuminate/session": "^10.0|^11.0",
         "illuminate/support": "^10.0|^11.0"
     },
     "require-dev": {

@@ -2,31 +2,60 @@
 
 namespace SupportPal\Pollcast\Broadcasting;
 
+use Exception;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
-use Illuminate\Contracts\Session\Session;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 
-use function uniqid;
+use function is_string;
 
 class Socket
 {
     use UsePusherChannelConventions;
 
-    public const UUID = 'pollcast:uuid';
-
-    /** @var Session */
-    private $session;
-
-    public function __construct(Session $session)
+    public function __construct(private readonly Request $request)
     {
-        $this->session = $session;
+        //
     }
 
-    public function id(): ?string
+    public function getIdFromRequest(): string
     {
-        return $this->create()->getId();
+        $id = $this->request->input('id');
+        if (is_string($id)) {
+            return $id;
+        }
+
+        throw new Exception;
+    }
+
+    public function hasId(): bool
+    {
+        try {
+            $this->getIdFromRequest();
+        } catch (Exception) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function createIdIfNotExists(): string
+    {
+        if (! $this->hasId()) {
+            $id = $this->createId();
+        } else {
+            $id = $this->getIdFromRequest();
+        }
+
+        return $id;
+    }
+
+    public function createId(): string
+    {
+        return Str::uuid()->toString();
     }
 
     /**
@@ -41,7 +70,7 @@ class Socket
         /** @var Member $member */
         $member = Member::query()->firstOrCreate([
             'channel_id' => $channel->id,
-            'socket_id'  => $this->id(),
+            'socket_id'  => $this->getIdFromRequest(),
         ], ['data' => $data]);
 
         if ($data === null) {
@@ -64,20 +93,6 @@ class Socket
             'event'      => 'pollcast:member_removed',
             'payload'    => $member->data ?? [],
         ]))->save();
-    }
-
-    protected function create(): self
-    {
-        if ($this->getId() === null) {
-            $this->session->put(self::UUID, uniqid('pollcast-', true));
-        }
-
-        return $this;
-    }
-
-    protected function getId(): ?string
-    {
-        return $this->session->get(self::UUID);
     }
 
     /**

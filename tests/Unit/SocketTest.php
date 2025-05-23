@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Tests\Unit;
 
+use Exception;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -9,24 +10,43 @@ use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
 use function json_encode;
+use function request;
 use function session;
 
 class SocketTest extends TestCase
 {
-    public function testId(): void
+    public function testCreateIfNotExists(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
+        $socket = new Socket(request());
+        $this->assertMatchesRegularExpression(
+            '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i',
+            $socket->createIdIfNotExists()
+        );
 
-        $this->assertSame((new Socket(app('session.store')))->id(), $socketId);
+        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
+        $this->assertSame(
+            $socketId,
+            $socket->createIdIfNotExists()
+        );
+    }
+
+    public function testGetIdFromRequest(): void
+    {
+        $request = request()->merge(['id' => $socketId = 'test']);
+
+        $this->assertSame((new Socket($request))->getIdFromRequest(), $socketId);
+    }
+
+    public function testGetIdFromRequestMissing(): void
+    {
+        $this->expectException(Exception::class);
+
+        (new Socket(request()))->getIdFromRequest();
     }
 
     public function testJoinChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
 
         $channelName = 'fake-channel';
         $socket->joinChannel($channelName);
@@ -41,10 +61,7 @@ class SocketTest extends TestCase
 
     public function testJoinPresenceChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
 
         $data = ['user_id' => 1];
         $channelName = 'presence-channel';
@@ -76,10 +93,7 @@ class SocketTest extends TestCase
 
     public function testRemoveMemberFromChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
 
         $channel = Channel::factory()->create(['name' => 'fake-name']);
         $member = Member::factory()->create(['channel_id' => $channel->id]);
@@ -94,10 +108,7 @@ class SocketTest extends TestCase
 
     public function testRemoveMemberFromPresenceChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
 
         $channel = Channel::factory()->create(['name' => 'presence-name']);
         $member = Member::factory()->create(['channel_id' => $channel->id]);
@@ -119,10 +130,7 @@ class SocketTest extends TestCase
 
     public function testRemoveMemberFromPrivateChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
 
         $channel = Channel::factory()->create(['name' => 'private-name']);
         $data = ['user_id' => 1];
