@@ -2,16 +2,12 @@
 
 namespace SupportPal\Pollcast\Tests\Functional;
 
-use Mockery;
-use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
-use function app;
 use function now;
 use function route;
-use function session;
 
 class VerifySocketIdMiddlewareTest extends TestCase
 {

@@ -8,10 +8,8 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
-use function app;
 use function json_encode;
 use function request;
-use function session;
 
 class SocketTest extends TestCase
 {
