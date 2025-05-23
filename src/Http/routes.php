@@ -5,7 +5,6 @@ use SupportPal\Pollcast\Http\Middleware\VerifySocketId;
 
 Route::group([
     'prefix' => 'pollcast',
-    'middleware' => ['web'],
     'namespace' => 'SupportPal\Pollcast\Http\Controller'
 ], function () {
     Route::post('connect', [
@@ -17,7 +16,7 @@ Route::group([
         Route::post('channel/subscribe', [
             'as' => 'supportpal.pollcast.subscribe',
             'uses' => 'ChannelController@subscribe',
-        ]);
+        ])->middleware('web');
 
         Route::post('channel/unsubscribe', [
             'as' => 'supportpal.pollcast.unsubscribe',
