@@ -23,7 +23,7 @@ class Socket
 
     public function getIdFromRequest(): string
     {
-        $id = $this->request->input('id');
+        $id = $this->request->header('X-Socket-ID');
         if (is_string($id)) {
             return $id;
         }
