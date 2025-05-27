@@ -17,8 +17,7 @@ class PublishTest extends TestCase
 
         $event = 'test-event';
         $data = ['user_id' => 1];
-        $route = route('supportpal.pollcast.publish', ['id' => 'test']);
-        $this->postAjax($route, [
+        $this->postAjax(route('supportpal.pollcast.publish'), [
             'channel_name' => $channelName,
             'event'        => $event,
             'data'         => $data,
@@ -36,8 +35,7 @@ class PublishTest extends TestCase
 
     public function testPublishChannelNotFound(): void
     {
-        $route = route('supportpal.pollcast.publish', ['id' => 'test']);
-        $this->postAjax($route, [
+        $this->postAjax(route('supportpal.pollcast.publish'), [
             'channel_name' => 'fake-channel',
             'event'        => 'test-event',
             'data'         => ['user_id' => 1],
@@ -48,8 +46,7 @@ class PublishTest extends TestCase
 
     public function testPublishValidation(): void
     {
-        $route = route('supportpal.pollcast.publish', ['id' => 'test']);
-        $this->postAjax($route)
+        $this->postAjax(route('supportpal.pollcast.publish'))
             ->assertStatus(422)
             ->assertJson([
                 'message' => 'The channel name field is required. (and 2 more errors)',
@@ -63,8 +60,7 @@ class PublishTest extends TestCase
 
     public function testPublishChannelValidation(): void
     {
-        $route = route('supportpal.pollcast.publish', ['id' => 'test']);
-        $this->postAjax($route, [
+        $this->postAjax(route('supportpal.pollcast.publish'), [
             'event'        => 'test-event',
             'data'         => ['user_id' => 1],
         ])
@@ -77,8 +73,7 @@ class PublishTest extends TestCase
 
     public function testPublishEventValidation(): void
     {
-        $route = route('supportpal.pollcast.publish', ['id' => 'test']);
-        $this->postAjax($route, [
+        $this->postAjax(route('supportpal.pollcast.publish'), [
             'channel_name' => 'fake-channel',
             'data'         => ['user_id' => 1],
         ])
@@ -91,8 +86,7 @@ class PublishTest extends TestCase
 
     public function testPublishDataValidation(): void
     {
-        $route = route('supportpal.pollcast.publish', ['id' => 'test']);
-        $this->postAjax($route, [
+        $this->postAjax(route('supportpal.pollcast.publish'), [
             'channel_name' => 'fake-channel',
             'event'        => 'test-event',
         ])

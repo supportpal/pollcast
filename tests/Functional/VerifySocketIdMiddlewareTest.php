@@ -11,14 +11,11 @@ use function route;
 
 class VerifySocketIdMiddlewareTest extends TestCase
 {
-    private string $socketId = 'test';
-
     public function testValidSession(): void
     {
         $channel = $this->setupChannelAndMember();
 
-        $route = route('supportpal.pollcast.receive', ['id' => $this->socketId]);
-        $this->post($route, [
+        $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
             'time'     => now()->toDateTimeString()
         ])
@@ -29,7 +26,7 @@ class VerifySocketIdMiddlewareTest extends TestCase
     {
         $channel = $this->setupChannelAndMember();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $this->post(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
             'time'     => now()->toDateTimeString()
         ])
@@ -39,7 +36,7 @@ class VerifySocketIdMiddlewareTest extends TestCase
     private function setupChannelAndMember(): Channel
     {
         $channel = Channel::factory()->create([ 'name' => 'public-channel' ]);
-        Member::factory()->create([ 'channel_id' => $channel->id, 'socket_id' => $this->socketId ]);
+        Member::factory()->create([ 'channel_id' => $channel->id, 'socket_id' => self::SOCKET_ID ]);
 
         return $channel;
     }

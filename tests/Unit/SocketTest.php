@@ -8,43 +8,54 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
+use function app;
 use function json_encode;
 use function request;
+use function session;
 
 class SocketTest extends TestCase
 {
+    public function testSession(): void
+    {
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+
+        $socket = new Socket(app('session.store'), $this->createRequest($socketId));
+        $this->assertSame($socketId, $socket->getIdFromSession());
+    }
+
     public function testCreateIfNotExists(): void
     {
-        $socket = new Socket(request());
+        $socket = new Socket(app('session.store'), $this->createRequest());
         $this->assertMatchesRegularExpression(
             '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i',
             $socket->createIdIfNotExists()
         );
 
-        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
-        $this->assertSame(
-            $socketId,
-            $socket->createIdIfNotExists()
-        );
+        $socket = new Socket(app('session.store'), $this->createRequest($socketId = 'test'));
+        $this->assertSame($socketId, $socket->createIdIfNotExists());
     }
 
     public function testGetIdFromRequest(): void
     {
-        $request = request()->merge(['id' => $socketId = 'test']);
+        $socket = new Socket(app('session.store'), $this->createRequest($socketId = 'test'));
 
-        $this->assertSame((new Socket($request))->getIdFromRequest(), $socketId);
+        $this->assertSame($socket->getIdFromRequest(), $socketId);
     }
 
     public function testGetIdFromRequestMissing(): void
     {
         $this->expectException(Exception::class);
+        $socket = new Socket(app('session.store'), request());
 
-        (new Socket(request()))->getIdFromRequest();
+        $socket->getIdFromRequest();
     }
 
     public function testJoinChannel(): void
     {
-        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+        $socket = new Socket(app('session.store'), request());
 
         $channelName = 'fake-channel';
         $socket->joinChannel($channelName);
@@ -59,7 +70,9 @@ class SocketTest extends TestCase
 
     public function testJoinPresenceChannel(): void
     {
-        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+        $socket = new Socket(app('session.store'), request());
 
         $data = ['user_id' => 1];
         $channelName = 'presence-channel';
@@ -91,7 +104,9 @@ class SocketTest extends TestCase
 
     public function testRemoveMemberFromChannel(): void
     {
-        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+        $socket = new Socket(app('session.store'), request());
 
         $channel = Channel::factory()->create(['name' => 'fake-name']);
         $member = Member::factory()->create(['channel_id' => $channel->id]);
@@ -106,7 +121,9 @@ class SocketTest extends TestCase
 
     public function testRemoveMemberFromPresenceChannel(): void
     {
-        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+        $socket = new Socket(app('session.store'), request());
 
         $channel = Channel::factory()->create(['name' => 'presence-name']);
         $member = Member::factory()->create(['channel_id' => $channel->id]);
@@ -128,7 +145,9 @@ class SocketTest extends TestCase
 
     public function testRemoveMemberFromPrivateChannel(): void
     {
-        $socket = new Socket(request()->merge(['id' => $socketId = 'test']));
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+        $socket = new Socket(app('session.store'), request());
 
         $channel = Channel::factory()->create(['name' => 'private-name']);
         $data = ['user_id' => 1];

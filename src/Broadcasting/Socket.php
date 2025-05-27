@@ -4,6 +4,7 @@ namespace SupportPal\Pollcast\Broadcasting;
 
 use Exception;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use SupportPal\Pollcast\Model\Channel;
@@ -16,9 +17,18 @@ class Socket
 {
     use UsePusherChannelConventions;
 
-    public function __construct(private readonly Request $request)
-    {
+    public const UUID = 'pollcast:uuid';
+
+    public function __construct(
+        private readonly Session $session,
+        private readonly Request $request
+    ) {
         //
+    }
+
+    public function getId(): string
+    {
+        return $this->getIdFromSession() ?? $this->getIdFromRequest();
     }
 
     public function getIdFromRequest(): string
@@ -31,9 +41,18 @@ class Socket
         throw new Exception;
     }
 
+    public function getIdFromSession(): ?string
+    {
+        return $this->session->get(self::UUID);
+    }
+
     public function hasId(): bool
     {
         try {
+            if ($this->getIdFromSession() !== null) {
+                return true;
+            }
+
             $this->getIdFromRequest();
         } catch (Exception) {
             return false;
@@ -47,7 +66,7 @@ class Socket
         if (! $this->hasId()) {
             $id = $this->createId();
         } else {
-            $id = $this->getIdFromRequest();
+            $id = $this->getIdFromSession() ?? $this->getIdFromRequest();
         }
 
         return $id;
@@ -70,7 +89,7 @@ class Socket
         /** @var Member $member */
         $member = Member::query()->firstOrCreate([
             'channel_id' => $channel->id,
-            'socket_id'  => $this->getIdFromRequest(),
+            'socket_id'  => $this->getId(),
         ], ['data' => $data]);
 
         if ($data === null) {

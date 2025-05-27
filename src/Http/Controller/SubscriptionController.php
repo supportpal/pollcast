@@ -29,7 +29,7 @@ class SubscriptionController
     {
         $time = Carbon::now();
 
-        $memberQuery = Member::query()->where('socket_id', $this->socket->getIdFromRequest());
+        $memberQuery = Member::query()->where('socket_id', $this->socket->getId());
         $members = $memberQuery->get();
         if ($members->isEmpty()) {
             return new JsonResponse(['status' => 'error']);
@@ -57,7 +57,7 @@ class SubscriptionController
     protected function getAuthorisedChannels(): Collection
     {
         return Member::query()
-            ->where('pollcast_channel_members.socket_id', $this->socket->getIdFromRequest())
+            ->where('pollcast_channel_members.socket_id', $this->socket->getId())
             ->join('pollcast_channel', 'pollcast_channel_members.channel_id', '=', 'pollcast_channel.id')
             ->pluck('pollcast_channel.name', 'pollcast_channel.id');
     }
@@ -97,7 +97,7 @@ class SubscriptionController
             // Remove events triggered by the same member (prevent unnecessary events).
             ->filter(function (Message $message) {
                 if ($this->messagesFound >= 10
-                    || Arr::get($message->payload, 'socket') === $this->socket->getIdFromRequest()
+                    || Arr::get($message->payload, 'socket') === $this->socket->getId()
                 ) {
                     return false;
                 }

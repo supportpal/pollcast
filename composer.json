@@ -14,6 +14,7 @@
         "illuminate/broadcasting": "^10.0|^11.0",
         "illuminate/database": "^10.0|^11.0",
         "illuminate/http": "^10.0|^11.0",
+        "illuminate/session": "^10.0|^11.0",
         "illuminate/support": "^10.0|^11.0"
     },
     "require-dev": {
@@ -53,7 +54,7 @@
     },
     "scripts": {
         "unit:tests": "php -d xdebug.mode=coverage vendor/bin/phpunit --coverage-html codecov",
-        "stan:analyse": "./vendor/bin/phpstan analyse",
+        "stan:analyse": "./vendor/bin/phpstan analyse --memory-limit=256M",
         "lint:analyse": "./vendor/bin/phpcs --standard=phpcs.xml",
         "lint:fix": "./vendor/bin/phpcbf --standard=phpcs.xml"
     }

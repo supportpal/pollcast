@@ -66,7 +66,7 @@ class ChannelController extends BroadcastController
         /** @var Member|null $member */
         $member = Member::query()
             ->where('channel_id', $channel->id)
-            ->where('socket_id', $this->socket->getIdFromRequest())
+            ->where('socket_id', $this->socket->getId())
             ->first();
 
         if ($member === null) {
@@ -94,7 +94,7 @@ class ChannelController extends BroadcastController
         /** @var Member|null $member */
         $member = Member::query()
             ->where('channel_id', $channel->id)
-            ->where('socket_id', $this->socket->getIdFromRequest())
+            ->where('socket_id', $this->socket->getId())
             ->first();
         if ($member === null) {
             throw $e;

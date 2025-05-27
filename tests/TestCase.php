@@ -3,13 +3,19 @@
 namespace SupportPal\Pollcast\Tests;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
 use SupportPal\Pollcast\ServiceProvider;
+use Symfony\Component\HttpFoundation\Request as BaseRequest;
 
+use function array_filter;
+use function array_merge;
 use function realpath;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
+    public const SOCKET_ID = 'test';
+
     /**
      * Setup the test environment.
      */
@@ -93,6 +99,16 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     public function postAjax(string $route, array $data = []): TestResponse
     {
-        return $this->post($route, $data, $this->getAjaxHeaders());
+        $headers = array_filter(array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => self::SOCKET_ID]));
+
+        return $this->post($route, $data, $headers);
+    }
+
+    protected function createRequest(?string $socketId = null): Request
+    {
+        $headers = array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $socketId]);
+        $base = new BaseRequest([], [], [], [], [], $headers);
+
+        return Request::createFromBase($base);
     }
 }
