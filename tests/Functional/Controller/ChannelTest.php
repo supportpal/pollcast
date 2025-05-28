@@ -47,7 +47,7 @@ class ChannelTest extends TestCase
             ->assertStatus(200)
             ->assertJson([true]);
 
-        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID') ?? '');
     }
 
     public function testSubscribeGuardedChannel(): void
@@ -124,7 +124,7 @@ class ChannelTest extends TestCase
             ->assertStatus(200)
             ->assertJson([true]);
 
-        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID') ?? '');
 
         return $channel;
     }

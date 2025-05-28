@@ -37,7 +37,7 @@ class SubscriptionTest extends TestCase
                 'events' => [],
             ]);
 
-        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID') ?? '');
     }
 
     public function testMessagesOneQueued(): void
