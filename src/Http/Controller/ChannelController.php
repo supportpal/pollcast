@@ -27,9 +27,11 @@ class ChannelController extends BroadcastController
 
     public function connect(): JsonResponse
     {
+        $this->socket->setId($this->socket->createIdIfNotExists());
+
         return new JsonResponse([
             'status' => 'success',
-            'id'     => $this->socket->createIdIfNotExists(),
+            'id'     => $this->socket->getIdFromSession(), // bc only.
             'time'   => Carbon::now()->toDateTimeString()
         ]);
     }

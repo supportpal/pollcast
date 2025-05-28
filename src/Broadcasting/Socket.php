@@ -3,15 +3,21 @@
 namespace SupportPal\Pollcast\Broadcasting;
 
 use Exception;
+use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
+use UnexpectedValueException;
 
 use function is_string;
+use function now;
 
 class Socket
 {
@@ -19,26 +25,66 @@ class Socket
 
     public const UUID = 'pollcast:uuid';
 
+    private ?string $id = null;
+
     public function __construct(
+        private readonly Repository $config,
         private readonly Session $session,
-        private readonly Request $request
+        private Request $request
     ) {
         //
     }
 
+    public function setRequest(Request $request): void
+    {
+        $this->request = $request;
+    }
+
+    public function encode(): string
+    {
+        if ($this->id === null) {
+            throw new InvalidSocketException('Socket ID is not set.');
+        }
+
+        $payload = [
+            'id'  => $this->id,
+            'iat' => now()->getTimestamp(), // Issued at
+            'exp' => now()->addMinute()->getTimestamp(), // Expiry
+        ];
+
+        return JWT::encode($payload, $this->getKey(), $this->getAlgorithm());
+    }
+
+    public function setId(string $id): self
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
     public function getId(): string
     {
-        return $this->getIdFromSession() ?? $this->getIdFromRequest();
+        if ($this->id === null) {
+            throw new InvalidSocketException('Socket ID is not set.');
+        }
+
+        return $this->id;
     }
 
     public function getIdFromRequest(): string
     {
-        $id = $this->request->header('X-Socket-ID');
-        if (is_string($id)) {
-            return $id;
+        $token = $this->request->header('X-Socket-ID');
+        if (is_string($token)) {
+            try {
+                $decoded = JWT::decode($token, new Key($this->getKey(), $this->getAlgorithm()));
+            } catch (UnexpectedValueException) {
+                throw new InvalidSocketException('X-Socket-ID header is invalid.');
+            }
+
+            return $decoded->id ?? throw new InvalidSocketException('X-Socket-ID header is invalid.');
         }
 
-        throw new Exception;
+        throw new InvalidSocketException('X-Socket-ID header is missing.');
     }
 
     public function getIdFromSession(): ?string
@@ -133,5 +179,15 @@ class Socket
             'event'      => 'pollcast:member_added',
             'payload'    => $memberData,
         ]))->save();
+    }
+
+    private function getKey(): string
+    {
+        return $this->config->get('app.key');
+    }
+
+    private function getAlgorithm(): string
+    {
+        return 'HS256';
     }
 }

@@ -17,13 +17,15 @@ class PublishTest extends TestCase
 
         $event = 'test-event';
         $data = ['user_id' => 1];
-        $this->postAjax(route('supportpal.pollcast.publish'), [
+        $response = $this->postAjax(route('supportpal.pollcast.publish'), [
             'channel_name' => $channelName,
             'event'        => $event,
             'data'         => $data,
         ])
             ->assertStatus(200)
             ->assertJson([true]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
 
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,

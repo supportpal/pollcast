@@ -195,7 +195,7 @@ class PollcastBroadcasterTest extends TestCase
      */
     private function setupBroadcaster(Request $request): PollcastBroadcaster
     {
-        $socket = new Socket(app('session.store'), $request);
+        $socket = new Socket(app('config'), app('session.store'), $request);
 
         return new PollcastBroadcaster($socket);
     }

@@ -1,11 +1,13 @@
 <?php declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use SupportPal\Pollcast\Http\Middleware\AddSocketId;
 use SupportPal\Pollcast\Http\Middleware\VerifySocketId;
 
 Route::group([
     'prefix' => 'pollcast',
-    'namespace' => 'SupportPal\Pollcast\Http\Controller'
+    'namespace' => 'SupportPal\Pollcast\Http\Controller',
+    'middleware' => [AddSocketId::class],
 ], function () {
     Route::post('connect', [
         'as'   => 'supportpal.pollcast.connect',

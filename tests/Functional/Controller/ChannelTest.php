@@ -25,23 +25,29 @@ class ChannelTest extends TestCase
 
         $socketMock = Mockery::mock(Socket::class)->makePartial();
         $socketMock->shouldReceive('hasId')->once()->andReturnFalse();
+        $socketMock->shouldReceive('encode')->once()->andReturn($token = '...');
+        $socketMock->shouldReceive('getIdFromSession')->once()->andReturn(null);
         $socketMock->shouldReceive('createId')->once()->andReturn($id = 'test');
         $this->app?->bind(Socket::class, fn () => $socketMock);
 
-        $this->postAjax(route('supportpal.pollcast.connect'))
+        $response = $this->postAjax(route('supportpal.pollcast.connect'))
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'id'     => $id,
+                'id'     => null,
                 'time'   => $date
             ]);
+
+        $this->assertSame($token, $response->headers->get('X-Socket-ID'));
     }
 
     public function testSubscribe(): void
     {
-        $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'public-channel'])
+        $response = $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'public-channel'])
             ->assertStatus(200)
             ->assertJson([true]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
     }
 
     public function testSubscribeGuardedChannel(): void
@@ -114,9 +120,11 @@ class ChannelTest extends TestCase
 
         Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId]);
 
-        $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
+        $response = $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
             ->assertStatus(200)
             ->assertJson([true]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
 
         return $channel;
     }

@@ -26,7 +26,7 @@ class SubscriptionTest extends TestCase
     {
         [$channel,] = $this->setupChannelAndMember();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $response = $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
@@ -36,6 +36,8 @@ class SubscriptionTest extends TestCase
                 'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [],
             ]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID'));
     }
 
     public function testMessagesOneQueued(): void

@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Validation\UnauthorizedException;
 use SupportPal\Pollcast\Broadcasting\Socket;
+use SupportPal\Pollcast\Exception\InvalidSocketException;
 
 class VerifySocketId
 {
@@ -19,7 +20,11 @@ class VerifySocketId
      */
     public function handle(Request $request, Closure $next)
     {
-        if (! $this->socket->hasId()) {
+        try {
+            $this->socket->setId(
+                $this->socket->getIdFromSession() ?? $this->socket->getIdFromRequest()
+            );
+        } catch (InvalidSocketException) {
             throw new UnauthorizedException;
         }
 
