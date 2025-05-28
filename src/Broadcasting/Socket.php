@@ -77,11 +77,11 @@ class Socket
         if (is_string($token)) {
             try {
                 $decoded = JWT::decode($token, new Key($this->getKey(), $this->getAlgorithm()));
-            } catch (UnexpectedValueException) {
-                throw new InvalidSocketException('X-Socket-ID header is invalid.');
+            } catch (UnexpectedValueException $e) {
+                throw new InvalidSocketException('X-Socket-ID header is invalid: ' . $e->getMessage());
             }
 
-            return $decoded->id ?? throw new InvalidSocketException('X-Socket-ID header is invalid.');
+            return $decoded->id ?? throw new InvalidSocketException('X-Socket-ID header is missing the id property.');
         }
 
         throw new InvalidSocketException('X-Socket-ID header is missing.');
