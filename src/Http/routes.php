@@ -1,12 +1,13 @@
 <?php declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use SupportPal\Pollcast\Http\Middleware\AddSocketId;
 use SupportPal\Pollcast\Http\Middleware\VerifySocketId;
 
 Route::group([
     'prefix' => 'pollcast',
-    'middleware' => ['web'],
-    'namespace' => 'SupportPal\Pollcast\Http\Controller'
+    'namespace' => 'SupportPal\Pollcast\Http\Controller',
+    'middleware' => [AddSocketId::class],
 ], function () {
     Route::post('connect', [
         'as'   => 'supportpal.pollcast.connect',
@@ -17,7 +18,7 @@ Route::group([
         Route::post('channel/subscribe', [
             'as' => 'supportpal.pollcast.subscribe',
             'uses' => 'ChannelController@subscribe',
-        ]);
+        ])->middleware('web');
 
         Route::post('channel/unsubscribe', [
             'as' => 'supportpal.pollcast.unsubscribe',

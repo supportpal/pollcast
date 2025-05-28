@@ -3,13 +3,24 @@
 namespace SupportPal\Pollcast\Tests;
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Testing\TestResponse;
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\ServiceProvider;
+use Symfony\Component\HttpFoundation\Request as BaseRequest;
 
+use function app;
+use function array_filter;
+use function array_merge;
 use function realpath;
+use function request;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
+    public const SOCKET_ID = 'test';
+
+    protected ?string $token = null;
+
     /**
      * Setup the test environment.
      */
@@ -23,6 +34,9 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             '--database' => 'testing',
             '--path'     => realpath(__DIR__ . '/../database/migrations'),
         ]);
+
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $this->token = $socket->setId(self::SOCKET_ID)->encode();
     }
 
     /**
@@ -93,6 +107,16 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     public function postAjax(string $route, array $data = []): TestResponse
     {
-        return $this->post($route, $data, $this->getAjaxHeaders());
+        $headers = array_filter(array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $this->token]));
+
+        return $this->post($route, $data, $headers);
+    }
+
+    protected function createRequest(?string $socketId = null): Request
+    {
+        $headers = array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $socketId]);
+        $base = new BaseRequest([], [], [], [], [], $headers);
+
+        return Request::createFromBase($base);
     }
 }

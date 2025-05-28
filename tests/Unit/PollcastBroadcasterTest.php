@@ -3,6 +3,7 @@
 namespace SupportPal\Pollcast\Tests\Unit;
 
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Orchestra\Testbench\Factories\UserFactory;
 use SupportPal\Pollcast\Broadcasting\Socket;
@@ -17,20 +18,17 @@ use function app;
 use function config;
 use function json_encode;
 use function request;
-use function session;
 
 class PollcastBroadcasterTest extends TestCase
 {
     public function testAuth(): void
     {
-        $broadcaster = $this->setupBroadcaster();
-
         $channelName = 'fake-channel';
+        [$user, $request] = $this->setupRequest($channelName);
+        $broadcaster = $this->setupBroadcaster($request);
         $broadcaster->channel($channelName, function (User $user) {
             return true;
         });
-
-        [$user, $request] = $this->setupRequest($channelName);
 
         $this->assertEquals([
             'user_id' => $user->id,
@@ -40,14 +38,13 @@ class PollcastBroadcasterTest extends TestCase
 
     public function testAuthUserInfo(): void
     {
-        $broadcaster = $this->setupBroadcaster();
-
         $channelName = 'fake-channel';
+        [$user, $request] = $this->setupRequest($channelName);
+        $broadcaster = $this->setupBroadcaster($request);
         $broadcaster->channel($channelName, function (User $user) {
             return $user;
         });
 
-        [$user, $request] = $this->setupRequest($channelName);
 
         $this->assertEquals([
             'user_id' => $user->id,
@@ -59,14 +56,12 @@ class PollcastBroadcasterTest extends TestCase
     {
         $data = ['data' => '1234'];
 
-        $broadcaster = $this->setupBroadcaster();
-
         $channelName = 'fake-channel';
+        [$user, $request] = $this->setupRequest($channelName);
+        $broadcaster = $this->setupBroadcaster($request);
         $broadcaster->channel($channelName, function () use ($data) {
             return $data;
         });
-
-        [$user, $request] = $this->setupRequest($channelName);
 
         $this->assertEquals([
             'user_id' => $user->id,
@@ -76,14 +71,12 @@ class PollcastBroadcasterTest extends TestCase
 
     public function testAuthInvalid(): void
     {
-        $broadcaster = $this->setupBroadcaster();
-
         $channelName = 'fake-channel';
+        [, $request] = $this->setupRequest($channelName);
+        $broadcaster = $this->setupBroadcaster($request);
         $broadcaster->channel($channelName, function (User $user) {
             return false;
         });
-
-        [, $request] = $this->setupRequest($channelName);
 
         $this->expectException(AccessDeniedHttpException::class);
         $broadcaster->auth($request);
@@ -91,7 +84,7 @@ class PollcastBroadcasterTest extends TestCase
 
     public function testBroadcast(): void
     {
-        $broadcaster = $this->setupBroadcaster();
+        $broadcaster = $this->setupBroadcaster(request());
 
         $channelName1 = 'public-channel';
         $channelName2 = 'private-channel';
@@ -122,7 +115,7 @@ class PollcastBroadcasterTest extends TestCase
         // Update lottery so garbage collection always runs.
         config(['pollcast.gc_lottery' => [1, 1]]);
 
-        $broadcaster = $this->setupBroadcaster();
+        $broadcaster = $this->setupBroadcaster(request());
 
         $channelName1 = 'public-channel';
         $channel1 = Channel::factory()->create([
@@ -180,7 +173,7 @@ class PollcastBroadcasterTest extends TestCase
         // Update lottery so garbage collection always runs.
         config(['pollcast.gc_lottery' => [1, 1]]);
 
-        $broadcaster = $this->setupBroadcaster();
+        $broadcaster = $this->setupBroadcaster(request());
 
         $channel1 = Channel::factory()->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
         $channel2 = Channel::factory()->create(['updated_at' => Carbon::now()->subDays(2)->toDateTimeString()]);
@@ -200,11 +193,9 @@ class PollcastBroadcasterTest extends TestCase
     /**
      * @return PollcastBroadcaster
      */
-    private function setupBroadcaster(): PollcastBroadcaster
+    private function setupBroadcaster(Request $request): PollcastBroadcaster
     {
-        session([Socket::UUID => 'test']);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(app('config'), app('session.store'), $request);
 
         return new PollcastBroadcaster($socket);
     }

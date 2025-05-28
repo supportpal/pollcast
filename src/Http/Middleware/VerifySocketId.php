@@ -6,15 +6,13 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Validation\UnauthorizedException;
 use SupportPal\Pollcast\Broadcasting\Socket;
+use SupportPal\Pollcast\Exception\InvalidSocketException;
 
 class VerifySocketId
 {
-    /** @var Socket */
-    private $socket;
-
-    public function __construct(Socket $socket)
+    public function __construct(private readonly Socket $socket)
     {
-        $this->socket = $socket;
+        //
     }
 
     /**
@@ -22,8 +20,12 @@ class VerifySocketId
      */
     public function handle(Request $request, Closure $next)
     {
-        if ($this->socket->id() === null) {
-            throw new UnauthorizedException;
+        try {
+            $this->socket->setId(
+                $this->socket->getIdFromSession() ?? $this->socket->getIdFromRequest()
+            );
+        } catch (InvalidSocketException $e) {
+            throw new UnauthorizedException($e->getMessage());
         }
 
         return $next($request);
