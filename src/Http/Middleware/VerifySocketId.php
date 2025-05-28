@@ -25,7 +25,7 @@ class VerifySocketId
                 $this->socket->getIdFromSession() ?? $this->socket->getIdFromRequest()
             );
         } catch (InvalidSocketException $e) {
-            throw new UnauthorizedException;
+            throw new UnauthorizedException($e->getMessage());
         }
 
         return $next($request);
