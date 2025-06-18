@@ -19,8 +19,8 @@
     },
     "require-dev": {
         "graham-campbell/testbench": "^6.0",
-        "larastan/larastan": "2.9.8",
-        "phpstan/phpstan-mockery": "1.1.2",
+        "larastan/larastan": "3.4.2",
+        "phpstan/phpstan-mockery": "2.0.0",
         "phpunit/phpunit": "^12.2",
         "rregeer/phpunit-coverage-check": "^0.3.1",
         "supportpal/coding-standard": "0.4.5"
