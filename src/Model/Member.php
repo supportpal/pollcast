@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Member extends Model
 {
+    /** @use HasFactory<MemberFactory> */
     use HasFactory, HasUuids;
 
     /** @var string */
@@ -31,7 +32,7 @@ class Member extends Model
     /** @var string[] */
     protected $guarded = [];
 
-    /** @var array<int, string> */
+    /** @var list<string> */
     protected $fillable = ['channel_id', 'socket_id', 'data'];
 
     /** @var array<string, string> */
@@ -42,7 +43,7 @@ class Member extends Model
     ];
 
     /**
-     * @return BelongsTo<Channel, Member>
+     * @return BelongsTo<Channel, $this>
      */
     public function channel(): BelongsTo
     {
