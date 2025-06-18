@@ -10,10 +10,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        laravel: ['10']
-        php: ['8.1', '8.2', '8.3', '8.4']
+        laravel: ['12']
+        php: ['8.3', '8.4']
 
-    name: PHP ${{ matrix.php }} - ${{ matrix.stability }}
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
 
     steps:
       - name: Checkout code
@@ -28,14 +28,6 @@ jobs:
 
       - name: Setup Problem Matchers
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
-
-      - name: Select Laravel 10
-        uses: nick-invision/retry@v3.0.2
-        with:
-          timeout_minutes: 5
-          max_attempts: 5
-          command: composer require "laravel/framework:10.*" "phpunit/phpunit:^10.0" --no-update --no-interaction
-        if: "matrix.laravel == '10'"
 
       - name: Install dependencies
         uses: nick-invision/retry@v3.0.2

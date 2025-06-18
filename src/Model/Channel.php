@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Channel extends Model
 {
+    /** @use HasFactory<ChannelFactory> */
     use HasFactory, HasUuids;
 
     /** @var string */
@@ -28,7 +29,7 @@ class Channel extends Model
     /** @var string[] */
     protected $guarded = [];
 
-    /** @var array<int, string> */
+    /** @var list<string> */
     protected $fillable = ['name'];
 
     /** @var array<string, string> */
