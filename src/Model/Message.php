@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Message extends Model
 {
+    /** @use HasFactory<MessageFactory> */
     use HasFactory, HasUuids;
 
     /** @var string */
@@ -32,7 +33,7 @@ class Message extends Model
     /** @var string[] */
     protected $guarded = [];
 
-    /** @var array<int, string> */
+    /** @var list<string> */
     protected $fillable = ['channel_id', 'member_id', 'event', 'payload'];
 
     /** @var array<string, string> */
@@ -47,7 +48,7 @@ class Message extends Model
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
     /**
-     * @return BelongsTo<Channel, Message>
+     * @return BelongsTo<Channel, $this>
      */
     public function channel(): BelongsTo
     {
@@ -55,7 +56,7 @@ class Message extends Model
     }
 
     /**
-     * @return BelongsTo<Member, Message>
+     * @return BelongsTo<Member, $this>
      */
     public function member(): BelongsTo
     {

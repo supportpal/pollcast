@@ -4,6 +4,7 @@ namespace SupportPal\Pollcast\Tests;
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Testing\TestResponse;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\ServiceProvider;
@@ -103,7 +104,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @param  string $route
      * @param  mixed[]  $data
-     * @return TestResponse
+     * @return TestResponse<Response>
      */
     public function postAjax(string $route, array $data = []): TestResponse
     {
@@ -112,7 +113,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         return $this->post($route, $data, $headers);
     }
 
-    protected function createRequest(?string $socketId = null): Request
+    protected function create
+      uest(?string $socketId = null): Request
     {
         $headers = array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $socketId]);
         $base = new BaseRequest([], [], [], [], [], $headers);
