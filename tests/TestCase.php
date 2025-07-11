@@ -113,8 +113,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         return $this->post($route, $data, $headers);
     }
 
-    protected function create
-      uest(?string $socketId = null): Request
+    protected function create(?string $socketId = null): Request
     {
         $headers = array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $socketId]);
         $base = new BaseRequest([], [], [], [], [], $headers);
