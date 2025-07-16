@@ -44,7 +44,7 @@ class SocketTest extends TestCase
         $socket = new Socket(app('config'), app('session.store'), request());
         $token = $socket->setId($socketId = 'test')->encode();
 
-        $socket = new Socket(app('config'), app('session.store'), $this->createRequest($token));
+        $socket = new Socket(app('config'), app('session.store'), $this->create($token));
         $this->assertSame($socket->getIdFromRequest(), $socketId);
     }
 
