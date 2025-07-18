@@ -15,6 +15,7 @@ use function array_filter;
 use function array_merge;
 use function realpath;
 use function request;
+use function sprintf;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {

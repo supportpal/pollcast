@@ -18,6 +18,7 @@ use UnexpectedValueException;
 
 use function is_string;
 use function now;
+use function sprintf;
 
 class Socket
 {
