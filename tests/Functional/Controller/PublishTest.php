@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Tests\TestCase;
 
@@ -17,13 +18,15 @@ class PublishTest extends TestCase
 
         $event = 'test-event';
         $data = ['user_id' => 1];
-        $this->postAjax(route('supportpal.pollcast.publish'), [
+        $response = $this->postAjax(route('supportpal.pollcast.publish'), [
             'channel_name' => $channelName,
             'event'        => $event,
             'data'         => $data,
         ])
             ->assertStatus(200)
             ->assertJson([true]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
 
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,

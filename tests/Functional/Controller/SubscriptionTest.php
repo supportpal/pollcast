@@ -11,7 +11,6 @@ use SupportPal\Pollcast\Tests\TestCase;
 
 use function implode;
 use function route;
-use function session;
 use function vsprintf;
 
 class SubscriptionTest extends TestCase
@@ -28,7 +27,7 @@ class SubscriptionTest extends TestCase
     {
         [$channel,] = $this->setupChannelAndMember();
 
-        $this->postAjax(route('supportpal.pollcast.receive'), [
+        $response = $this->postAjax(route('supportpal.pollcast.receive'), [
             'channels' => [$channel->name],
             'time'     => Carbon::now()->toDateTimeString('microsecond'),
         ])
@@ -38,6 +37,8 @@ class SubscriptionTest extends TestCase
                 'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [],
             ]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
     }
 
     public function testMessagesOneQueued(): void
@@ -259,13 +260,10 @@ class SubscriptionTest extends TestCase
      */
     private function setupChannelAndMember(): array
     {
-        $socketId = 'test';
-        session([ Socket::UUID => $socketId ]);
-
         $channel = Channel::factory()->create([ 'name' => 'public-channel' ]);
         $member = Member::factory()->create([
             'channel_id' => $channel->id,
-            'socket_id'  => $socketId,
+            'socket_id'  => static::SOCKET_ID,
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
 

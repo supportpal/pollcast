@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast;
 
+use Closure;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Support\Arr;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
@@ -18,9 +19,7 @@ class ServiceProvider extends BaseServiceProvider
     public function boot(BroadcastManager $manager): void
     {
         $manager->extend('pollcast', function ($app) {
-            $socket = new Socket($app['session.store']);
-
-            return new PollcastBroadcaster($socket);
+            return new PollcastBroadcaster($app[Socket::class]);
         });
 
         $this->loadRoutesFrom(__DIR__.'/Http/routes.php');
@@ -33,8 +32,27 @@ class ServiceProvider extends BaseServiceProvider
 
     public function register()
     {
+        $this->registerSocket();
         $this->mergeConfigFrom(__DIR__.'/../config/broadcasting.php', 'broadcasting');
         $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'pollcast');
+    }
+
+    protected function registerSocket(): void
+    {
+        $this->app->singleton(Socket::class, function ($app) {
+            return new Socket(
+                $app['config'],
+                $app['session.store'],
+                $app->rebinding('request', $this->requestRebinder()),
+            );
+        });
+    }
+
+    protected function requestRebinder(): Closure
+    {
+        return function ($app, $request) {
+            $app[Socket::class]->setRequest($request);
+        };
     }
 
     /**

@@ -5,6 +5,7 @@ namespace SupportPal\Pollcast\Tests\Functional\Controller;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Broadcast;
+use Mockery;
 use Orchestra\Testbench\Factories\UserFactory;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
@@ -22,20 +23,31 @@ class ChannelTest extends TestCase
         $date = '2021-06-01 00:00:00';
         Carbon::setTestNow(Carbon::parse($date));
 
-        $this->postAjax(route('supportpal.pollcast.connect'))
+        $socketMock = Mockery::mock(Socket::class)->makePartial();
+        $socketMock->shouldReceive('hasId')->once()->andReturnFalse();
+        $socketMock->shouldReceive('encode')->once()->andReturn($token = '...');
+        $socketMock->shouldReceive('getIdFromSession')->once()->andReturn(null);
+        $socketMock->shouldReceive('createId')->once()->andReturn($id = 'test');
+        $this->app?->bind(Socket::class, fn () => $socketMock);
+
+        $response = $this->postAjax(route('supportpal.pollcast.connect'))
             ->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
-                'id'     => session(Socket::UUID),
+                'id'     => null,
                 'time'   => $date
             ]);
+
+        $this->assertSame($token, $response->headers->get(Socket::HEADER));
     }
 
     public function testSubscribe(): void
     {
-        $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'public-channel'])
+        $response = $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'public-channel'])
             ->assertStatus(200)
             ->assertJson([true]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
     }
 
     public function testSubscribeGuardedChannel(): void
@@ -56,7 +68,7 @@ class ChannelTest extends TestCase
 
     public function testSubscribeChannelAuthErrorChannelNotFound(): void
     {
-        $this->post(route('supportpal.pollcast.subscribe'), ['channel_name' => 'private-channel'])
+        $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'private-channel'])
             ->assertStatus(403);
     }
 
@@ -65,7 +77,7 @@ class ChannelTest extends TestCase
         $channelName = 'private-channel';
         Channel::factory()->create(['name' => $channelName]);
 
-        $this->post(route('supportpal.pollcast.subscribe'), ['channel_name' => $channelName])
+        $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => $channelName])
             ->assertStatus(403);
     }
 
@@ -108,9 +120,11 @@ class ChannelTest extends TestCase
 
         Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => $socketId]);
 
-        $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
+        $response = $this->postAjax(route('supportpal.pollcast.unsubscribe'), ['channel_name' => $channelName])
             ->assertStatus(200)
             ->assertJson([true]);
+
+        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
 
         return $channel;
     }

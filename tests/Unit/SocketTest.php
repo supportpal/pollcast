@@ -3,30 +3,63 @@
 namespace SupportPal\Pollcast\Tests\Unit;
 
 use SupportPal\Pollcast\Broadcasting\Socket;
+use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
 use function json_encode;
+use function request;
 use function session;
 
 class SocketTest extends TestCase
 {
-    public function testId(): void
+    public function testSession(): void
     {
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
 
-        $this->assertSame((new Socket(app('session.store')))->id(), $socketId);
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $this->assertSame($socketId, $socket->getIdFromSession());
+    }
+
+    public function testCreateIfNotExists(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $this->assertMatchesRegularExpression(
+            '/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i',
+            $socket->createIdIfNotExists()
+        );
+
+        $socketId = 'test';
+        session([Socket::UUID => $socketId]);
+
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $this->assertSame($socketId, $socket->createIdIfNotExists());
+    }
+
+    public function testGetIdFromRequest(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $token = $socket->setId($socketId = 'test')->encode();
+
+        $socket = new Socket(app('config'), app('session.store'), $this->create($token));
+        $this->assertSame($socket->getIdFromRequest(), $socketId);
+    }
+
+    public function testGetIdFromRequestMissing(): void
+    {
+        $this->expectException(InvalidSocketException::class);
+        $socket = new Socket(app('config'), app('session.store'), request());
+
+        $socket->getIdFromRequest();
     }
 
     public function testJoinChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $socket->setId($socketId = 'test');
 
         $channelName = 'fake-channel';
         $socket->joinChannel($channelName);
@@ -41,10 +74,8 @@ class SocketTest extends TestCase
 
     public function testJoinPresenceChannel(): void
     {
-        $socketId = 'test';
-        session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $socket->setId($socketId = 'test');
 
         $data = ['user_id' => 1];
         $channelName = 'presence-channel';
@@ -78,8 +109,7 @@ class SocketTest extends TestCase
     {
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(app('config'), app('session.store'), request());
 
         $channel = Channel::factory()->create(['name' => 'fake-name']);
         $member = Member::factory()->create(['channel_id' => $channel->id]);
@@ -96,8 +126,7 @@ class SocketTest extends TestCase
     {
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(app('config'), app('session.store'), request());
 
         $channel = Channel::factory()->create(['name' => 'presence-name']);
         $member = Member::factory()->create(['channel_id' => $channel->id]);
@@ -121,8 +150,7 @@ class SocketTest extends TestCase
     {
         $socketId = 'test';
         session([Socket::UUID => $socketId]);
-
-        $socket = new Socket(app('session.store'));
+        $socket = new Socket(app('config'), app('session.store'), request());
 
         $channel = Channel::factory()->create(['name' => 'private-name']);
         $data = ['user_id' => 1];

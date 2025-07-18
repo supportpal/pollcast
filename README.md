@@ -73,7 +73,6 @@ import PollcastConnector from 'pollcast-js'
 
 window.Echo = new Echo({
   broadcaster: PollcastConnector,
-  csrfToken: "{{ csrf_token() }}",
   routes: {
     connect: "{{ route('supportpal.pollcast.connect') }}",
     receive: "{{ route('supportpal.pollcast.receive') }}",
