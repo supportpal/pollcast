@@ -108,14 +108,14 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     public function postAjax(string $route, array $data = []): TestResponse
     {
-        $headers = array_filter(array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $this->token]));
+        $headers = array_filter(array_merge($this->getAjaxHeaders(), [sprintf('HTTP_%s', Socket::HEADER) => $this->token]));
 
         return $this->post($route, $data, $headers);
     }
 
     protected function create(?string $socketId = null): Request
     {
-        $headers = array_merge($this->getAjaxHeaders(), ['HTTP_X-Socket-ID' => $socketId]);
+        $headers = array_merge($this->getAjaxHeaders(), [sprintf('HTTP_%s', Socket::HEADER) => $socketId]);
         $base = new BaseRequest([], [], [], [], [], $headers);
 
         return Request::createFromBase($base);

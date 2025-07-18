@@ -23,7 +23,10 @@ class Socket
 {
     use UsePusherChannelConventions;
 
-    public const UUID = 'pollcast:uuid';
+    public const string HEADER = 'X-Socket-ID';
+
+    /** Session key, only for backwards compatibility. */
+    public const string UUID = 'pollcast:uuid';
 
     private ?string $id = null;
 
@@ -73,18 +76,18 @@ class Socket
 
     public function getIdFromRequest(): string
     {
-        $token = $this->request->header('X-Socket-ID');
+        $token = $this->request->header(self::HEADER);
         if (is_string($token)) {
             try {
                 $decoded = JWT::decode($token, new Key($this->getKey(), $this->getAlgorithm()));
             } catch (UnexpectedValueException $e) {
-                throw new InvalidSocketException('X-Socket-ID header is invalid: ' . $e->getMessage());
+                throw new InvalidSocketException(sprintf('%s header is invalid: %s', self::HEADER, $e->getMessage()));
             }
 
-            return $decoded->id ?? throw new InvalidSocketException('X-Socket-ID header is missing the id property.');
+            return $decoded->id ?? throw new InvalidSocketException(sprintf('%s header is missing the id property.', self::HEADER));
         }
 
-        throw new InvalidSocketException('X-Socket-ID header is missing.');
+        throw new InvalidSocketException(sprintf('%s header is missing.', self::HEADER));
     }
 
     public function getIdFromSession(): ?string

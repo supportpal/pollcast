@@ -3,6 +3,7 @@
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
 use Illuminate\Support\Carbon;
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
@@ -37,7 +38,7 @@ class SubscriptionTest extends TestCase
                 'events' => [],
             ]);
 
-        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID') ?? '');
+        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
     }
 
     public function testMessagesOneQueued(): void

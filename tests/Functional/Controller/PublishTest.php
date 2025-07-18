@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Tests\TestCase;
 
@@ -25,7 +26,7 @@ class PublishTest extends TestCase
             ->assertStatus(200)
             ->assertJson([true]);
 
-        $this->assertStringStartsWith('eyJ', $response->headers->get('X-Socket-ID') ?? '');
+        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
 
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,

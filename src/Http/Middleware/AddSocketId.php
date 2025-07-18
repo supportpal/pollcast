@@ -21,7 +21,7 @@ class AddSocketId
         $response = $next($request);
 
         try {
-            $response->headers->set('X-Socket-ID', $this->socket->encode());
+            $response->headers->set($this->socket::HEADER, $this->socket->encode());
 
             return $response;
         } catch (InvalidSocketException) {
