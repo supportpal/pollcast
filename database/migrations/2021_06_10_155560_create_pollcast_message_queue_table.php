@@ -22,10 +22,10 @@ class CreatePollcastMessageQueueTable extends Migration
             $table->uuid('id')->primary();
 
             $table->uuid('channel_id');
-            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->onDelete('cascade');
+            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->cascadeOnDelete();
 
             $table->uuid('member_id')->nullable();
-            $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->onDelete('cascade');
+            $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->cascadeOnDelete();
 
             $table->text('event');
             $table->mediumText('payload');
