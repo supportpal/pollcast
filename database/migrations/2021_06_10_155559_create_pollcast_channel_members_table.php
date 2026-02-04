@@ -22,7 +22,7 @@ class CreatePollcastChannelMembersTable extends Migration
             $table->uuid('id')->primary();
 
             $table->uuid('channel_id');
-            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->onDelete('cascade');
+            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->onDeleteCascade();
 
             $table->string('socket_id', 191)->index();
             $table->mediumText('data')->nullable();
