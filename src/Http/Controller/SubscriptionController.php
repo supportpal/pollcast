@@ -75,7 +75,7 @@ class SubscriptionController
     ): LazyCollection {
         return Message::query()
             ->with('channel')
-            ->where('created_at', '>=', $request->get('time'))
+            ->where('created_at', '>=', $request->input('time'))
             ->where('created_at', '<', $time->toDateTimeString('microsecond'))
             ->where(function ($query) use ($members, $channels, $request) {
                 $query->orWhereIn('member_id', $members->pluck('id'));
@@ -83,7 +83,7 @@ class SubscriptionController
                 $channels->each(function (string $name, string $id) use ($request, $query) {
                     // Get requested events.
                     // If they ask for a channel they're not authorised to view then we'll ignore it.
-                    $events = $request->get('channels', [])[$name] ?? [];
+                    $events = $request->input('channels', [])[$name] ?? [];
 
                     foreach ($events as $event) {
                         $query->orWhere(function ($query) use ($id, $event) {
