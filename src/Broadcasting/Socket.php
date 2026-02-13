@@ -2,7 +2,9 @@
 
 namespace SupportPal\Pollcast\Broadcasting;
 
+use DomainException;
 use Exception;
+use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
@@ -10,6 +12,8 @@ use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
+use SupportPal\Pollcast\Exception\ExpiredSocketException;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -81,7 +85,9 @@ class Socket
         if (is_string($token)) {
             try {
                 $decoded = JWT::decode($token, new Key($this->getKey(), $this->getAlgorithm()));
-            } catch (UnexpectedValueException $e) {
+            } catch (ExpiredException) {
+                throw new ExpiredSocketException(sprintf('%s header has expired.', self::HEADER));
+            } catch (InvalidArgumentException | DomainException | UnexpectedValueException $e) {
                 throw new InvalidSocketException(sprintf('%s header is invalid: %s', self::HEADER, $e->getMessage()));
             }
 

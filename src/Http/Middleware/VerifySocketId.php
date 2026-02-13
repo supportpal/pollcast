@@ -4,9 +4,11 @@ namespace SupportPal\Pollcast\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Validation\UnauthorizedException;
 use SupportPal\Pollcast\Broadcasting\Socket;
+use SupportPal\Pollcast\Exception\ExpiredSocketException;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
+
+use function response;
 
 class VerifySocketId
 {
@@ -22,8 +24,18 @@ class VerifySocketId
     {
         try {
             $this->socket->setId($this->getSocketId($request));
+        } catch (ExpiredSocketException $e) {
+            return response()->json([
+                'status'  => 'error',
+                'data'    => ['code' => 'TOKEN_EXPIRED'],
+                'message' => $e->getMessage(),
+            ], 401);
         } catch (InvalidSocketException $e) {
-            throw new UnauthorizedException($e->getMessage());
+            return response()->json([
+                'status'  => 'error',
+                'data'    => null,
+                'message' => $e->getMessage(),
+            ], 401);
         }
 
         return $next($request);
