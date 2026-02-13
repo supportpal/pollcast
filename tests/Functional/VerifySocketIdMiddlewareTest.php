@@ -171,7 +171,7 @@ class VerifySocketIdMiddlewareTest extends TestCase
 
         $config = app('config');
         $key = $config->get('app.key');
-        $algorithm = $config->get('broadcasting.connections.pollcast.algorithm');
+        $algorithm = $config->get('broadcasting.connections.pollcast.algorithm', 'HS256');
 
         return JWT::encode($payload, $key, $algorithm);
     }
