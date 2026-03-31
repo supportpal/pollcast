@@ -36,7 +36,9 @@ class SubscriptionController
         }
 
         // Update the last active time of the member.
-        $memberQuery->update(['updated_at' => $time]);
+        Member::query()
+            ->whereIn('id', $members->pluck('id'))
+            ->update(['updated_at' => $time]);
 
         $messages = new Collection;
         $channels = $this->getAuthorisedChannels();
