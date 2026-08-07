@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request as BaseRequest;
 use function app;
 use function array_filter;
 use function array_merge;
+use function getenv;
 use function realpath;
 use function request;
 use function sprintf;
@@ -85,6 +86,37 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set('app.key', 'slHhRrJMrmlsM6oC0L1fJp5n4QS8pg7m');
         $app['config']->set('database.default', 'testing');
         $app['config']->set('broadcasting.default', 'pollcast');
+
+        if (getenv('DB_CONNECTION') !== 'mysql') {
+            return;
+        }
+
+        $app['config']->set('database.connections.testing', $this->mysqlConnection());
+    }
+
+    /**
+     * MySQL/MariaDB is what the package is deployed on, and the only supported database whose
+     * default collation compares channel names case-insensitively - so it is the only one where
+     * the collation on `pollcast_channel.name` is doing any work.
+     *
+     * The connection itself is left on that case-insensitive default, so the column's own
+     * collation is what the tests exercise.
+     *
+     * @return array<string, mixed>
+     */
+    private function mysqlConnection(): array
+    {
+        return [
+            'driver'    => 'mysql',
+            'host'      => getenv('DB_HOST') ?: '127.0.0.1',
+            'port'      => getenv('DB_PORT') ?: '3306',
+            'database'  => getenv('DB_DATABASE') ?: 'pollcast',
+            'username'  => getenv('DB_USERNAME') ?: 'root',
+            'password'  => getenv('DB_PASSWORD') ?: '',
+            'charset'   => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix'    => '',
+        ];
     }
 
     /**
