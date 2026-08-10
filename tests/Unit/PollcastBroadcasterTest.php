@@ -2,10 +2,12 @@
 
 namespace SupportPal\Pollcast\Tests\Unit;
 
+use Firebase\JWT\JWT;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Orchestra\Testbench\Factories\UserFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -17,6 +19,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use function app;
 use function config;
 use function json_encode;
+use function now;
 use function request;
 
 class PollcastBroadcasterTest extends TestCase
@@ -95,7 +98,7 @@ class PollcastBroadcasterTest extends TestCase
         $broadcaster->channel($channelName2, $userFunction);
 
         $eventName = 'test-event';
-        $broadcaster->broadcast([$channelName1, $channelName2], $eventName, ['socket' => 'x']);
+        $broadcaster->broadcast([$channelName1, $channelName2], $eventName, ['socket' => $this->token]);
 
         $channels = Channel::get();
         foreach ($channels as $channel) {
@@ -103,11 +106,66 @@ class PollcastBroadcasterTest extends TestCase
                 'channel_id' => $channel->id,
                 'member_id'  => null,
                 'event'      => $eventName,
-                'payload'    => json_encode(['socket' => 'x']),
+                'payload'    => json_encode(['socket' => self::SOCKET_ID]),
             ]);
         }
 
         $this->assertDatabaseCount('pollcast_message_queue', 2);
+    }
+
+    /**
+     * A toOthers() broadcast carries the sender's X-Socket-ID header into the payload, and for this
+     * driver that header is the token which proves socket identity. The payload is served to every
+     * other member of the channel, so only the socket id it names may be persisted.
+     */
+    public function testBroadcastDoesNotPersistTheSendersSocketToken(): void
+    {
+        $broadcaster = $this->setupBroadcaster(request());
+
+        $broadcaster->broadcast(['public-channel'], 'test-event', ['socket' => $this->token]);
+
+        $this->assertDatabaseMissing('pollcast_message_queue', ['payload' => json_encode(['socket' => $this->token])]);
+        $this->assertDatabaseHas('pollcast_message_queue', ['payload' => json_encode(['socket' => self::SOCKET_ID])]);
+    }
+
+    /**
+     * The token is minted for a minute, but a queued broadcast may not be written until after it
+     * has expired - the socket it names is still the one to leave out of its own broadcast.
+     */
+    public function testBroadcastResolvesAnExpiredSocketToken(): void
+    {
+        $broadcaster = $this->setupBroadcaster(request());
+
+        $token = JWT::encode([
+            'id'  => self::SOCKET_ID,
+            'iat' => now()->subMinutes(2)->getTimestamp(),
+            'exp' => now()->subMinute()->getTimestamp(),
+        ], config('app.key'), 'HS256');
+
+        $broadcaster->broadcast(['public-channel'], 'test-event', ['socket' => $token]);
+
+        $this->assertDatabaseHas('pollcast_message_queue', ['payload' => json_encode(['socket' => self::SOCKET_ID])]);
+    }
+
+    #[DataProvider('unresolvableSocketProvider')]
+    public function testBroadcastDiscardsASocketItCannotResolve(mixed $socket): void
+    {
+        $broadcaster = $this->setupBroadcaster(request());
+
+        $broadcaster->broadcast(['public-channel'], 'test-event', ['socket' => $socket]);
+
+        $this->assertDatabaseHas('pollcast_message_queue', ['payload' => json_encode(['socket' => null])]);
+    }
+
+    /**
+     * @return iterable<string, array{mixed}>
+     */
+    public static function unresolvableSocketProvider(): iterable
+    {
+        yield 'not a token'      => ['x'];
+        yield 'malformed token'  => ['malformed.jwt.token'];
+        yield 'a bare socket id' => [self::SOCKET_ID];
+        yield 'not a string'     => [['id' => self::SOCKET_ID]];
     }
 
     public function testBroadcastGarbageCollection(): void

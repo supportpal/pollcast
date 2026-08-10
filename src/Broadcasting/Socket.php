@@ -13,6 +13,7 @@ use Illuminate\Contracts\Session\Session;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use stdClass;
 use SupportPal\Pollcast\Exception\ExpiredSocketException;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
@@ -84,17 +85,39 @@ class Socket
         $token = $this->request->header(self::HEADER);
         if (is_string($token)) {
             try {
-                $decoded = JWT::decode($token, new Key($this->getKey(), $this->getAlgorithm()));
+                $decoded = $this->decode($token);
             } catch (ExpiredException) {
                 throw new ExpiredSocketException(sprintf('%s header has expired.', self::HEADER));
-            } catch (InvalidArgumentException | DomainException | UnexpectedValueException $e) {
-                throw new InvalidSocketException(sprintf('%s header is invalid: %s', self::HEADER, $e->getMessage()));
             }
 
-            return $decoded->id ?? throw new InvalidSocketException(sprintf('%s header is missing the id property.', self::HEADER));
+            return $this->idFromPayload($decoded);
         }
 
         throw new InvalidSocketException(sprintf('%s header is missing.', self::HEADER));
+    }
+
+    /**
+     * Resolve the socket id a token names, whether or not it has expired.
+     *
+     * Unlike getIdFromRequest() this is not an authentication check - the id is only used to
+     * work out which socket an event came from - so a token which expired between the broadcast
+     * and its delivery still names the right socket.
+     *
+     * @throws InvalidSocketException
+     */
+    public function getIdFromToken(string $token): string
+    {
+        try {
+            $decoded = $this->decode($token);
+        } catch (ExpiredException $e) {
+            $decoded = $e->getPayload();
+        }
+
+        if (! $decoded instanceof stdClass) {
+            throw new InvalidSocketException(sprintf('%s payload is not an object.', self::HEADER));
+        }
+
+        return $this->idFromPayload($decoded);
     }
 
     public function getIdFromSession(): ?string
@@ -193,6 +216,30 @@ class Socket
             'event'      => 'pollcast:member_added',
             'payload'    => $memberData,
         ]))->save();
+    }
+
+    /**
+     * @throws ExpiredException
+     * @throws InvalidSocketException
+     */
+    private function decode(string $token): stdClass
+    {
+        try {
+            return JWT::decode($token, new Key($this->getKey(), $this->getAlgorithm()));
+        } catch (ExpiredException $e) {
+            // Caught first so expiry is not swallowed as invalid - it extends UnexpectedValueException.
+            throw $e;
+        } catch (InvalidArgumentException | DomainException | UnexpectedValueException $e) {
+            throw new InvalidSocketException(sprintf('%s header is invalid: %s', self::HEADER, $e->getMessage()));
+        }
+    }
+
+    /**
+     * @throws InvalidSocketException
+     */
+    private function idFromPayload(stdClass $payload): string
+    {
+        return $payload->id ?? throw new InvalidSocketException(sprintf('%s header is missing the id property.', self::HEADER));
     }
 
     private function isPresenceChannel(string $channel): bool
