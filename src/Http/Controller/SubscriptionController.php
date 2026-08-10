@@ -82,7 +82,9 @@ class SubscriptionController
             ->where(function ($query) use ($members, $channels, $request) {
                 $query->orWhereIn('member_id', $members->pluck('id'));
 
-                $channels->each(function (string $name, string $id) use ($request, $query) {
+                $joinedAt = $members->pluck('created_at', 'channel_id');
+
+                $channels->each(function (string $name, string $id) use ($request, $query, $joinedAt) {
                     // Get requested events.
                     // If they ask for a channel they're not authorised to view then we'll ignore it.
                     $events = $request->input('channels', [])[$name] ?? [];
@@ -90,8 +92,10 @@ class SubscriptionController
                         return;
                     }
 
-                    $query->orWhere(function ($query) use ($id, $events) {
-                        $query->where('channel_id', $id)->whereIn('event', $events);
+                    $query->orWhere(function ($query) use ($id, $events, $joinedAt) {
+                        $query->where('channel_id', $id)
+                            ->whereIn('event', $events)
+                            ->where('created_at', '>=', $joinedAt->get($id));
                     });
                 });
             })

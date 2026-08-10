@@ -5,6 +5,7 @@ namespace SupportPal\Pollcast\Tests\Functional\Controller;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
@@ -178,6 +179,74 @@ class SubscriptionTest extends TestCase
                 'time'   => Carbon::now()->toDateTimeString('microsecond'),
                 'events' => [$message->load('channel')->toArray()],
             ]);
+    }
+
+    /**
+     * A caller may walk the `time` cursor as far back as they like, so the point they joined the
+     * channel is the floor - the backlog from before that was never theirs to read.
+     */
+    public function testMessagesExcludeTheBacklogFromBeforeTheCallerJoined(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'private-channel']);
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'socket_id'  => static::SOCKET_ID,
+            'created_at' => '2021-06-01 11:59:57',
+        ]);
+
+        $event = 'test-event';
+        Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:56']);
+        $message = Message::factory()->create(['channel_id' => $channel->id, 'event' => $event, 'created_at' => '2021-06-01 11:59:58']);
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => [$event]],
+            'time'     => '2000-01-01 00:00:00',
+        ])
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'events')
+            ->assertJson([
+                'status' => 'success',
+                'time'   => Carbon::now()->toDateTimeString('microsecond'),
+                'events' => [$message->load('channel')->toArray()],
+            ]);
+    }
+
+    /**
+     * Each channel is bounded by its own membership - joining a second one late does not reach
+     * back into a channel the caller has been in all along, or vice versa.
+     */
+    public function testMessagesAreBoundedByEachChannelsOwnJoin(): void
+    {
+        $event = 'test-event';
+
+        [$early, $late] = Collection::make(['2021-06-01 11:59:50', '2021-06-01 11:59:57'])
+            ->map(function (string $joinedAt, int $i) use ($event) {
+                $channel = Channel::factory()->create(['name' => 'private-channel-' . $i]);
+                Member::factory()->create([
+                    'channel_id' => $channel->id,
+                    'socket_id'  => static::SOCKET_ID,
+                    'created_at' => $joinedAt,
+                ]);
+
+                return [
+                    'name'    => $channel->name,
+                    'message' => Message::factory()->create([
+                        'channel_id' => $channel->id,
+                        'event'      => $event,
+                        'created_at' => '2021-06-01 11:59:55',
+                    ]),
+                ];
+            })
+            ->all();
+
+        $response = $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$early['name'] => [$event], $late['name'] => [$event]],
+            'time'     => '2000-01-01 00:00:00',
+        ])
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'events');
+
+        $this->assertSame($early['message']->id, $response->json('events.0.id'));
     }
 
     public function testMessagesOrdering(): void
@@ -390,6 +459,9 @@ class SubscriptionTest extends TestCase
         $member = Member::factory()->create([
             'channel_id' => $channel->id,
             'socket_id'  => static::SOCKET_ID,
+            // Joined before any of the messages below were broadcast, which is the only way a
+            // caller is entitled to read them.
+            'created_at' => Carbon::now()->subMinute()->toDateTimeString(),
             'updated_at' => Carbon::now()->subSeconds(5)->toDateTimeString(),
         ]);
 
