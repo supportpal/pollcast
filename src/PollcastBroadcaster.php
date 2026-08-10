@@ -8,12 +8,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Broadcasting\Socket;
+use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 use function config;
+use function is_string;
 use function random_int;
 
 class PollcastBroadcaster extends Broadcaster
@@ -84,6 +86,8 @@ class PollcastBroadcaster extends Broadcaster
             $this->gc();
         }
 
+        $payload = $this->replaceSocketToken($payload);
+
         $messages = new Collection;
         foreach ($channels as $channel) {
             $channel = Channel::query()->firstOrCreate(['name' => $channel]);
@@ -98,6 +102,36 @@ class PollcastBroadcaster extends Broadcaster
         }
 
         Message::insert($messages->toArray());
+    }
+
+    /**
+     * Swap the sender's socket token for the socket id it names.
+     *
+     * For a toOthers() broadcast Laravel copies the raw X-Socket-ID header into the payload, and
+     * for this driver that header is the signed token proving socket identity. The payload is
+     * persisted and then served to every other member of the channel, so storing the token as-is
+     * would hand each of them a working credential for the sender's socket. The id it names is
+     * all the delivery side needs to leave the sender out of its own broadcast.
+     *
+     * @param  mixed[] $payload
+     * @return mixed[]
+     */
+    protected function replaceSocketToken(array $payload): array
+    {
+        if (! isset($payload['socket'])) {
+            return $payload;
+        }
+
+        try {
+            $payload['socket'] = is_string($payload['socket'])
+                ? $this->socket->getIdFromToken($payload['socket'])
+                : null;
+        } catch (InvalidSocketException) {
+            // Anything we cannot resolve to a socket names nobody to exclude.
+            $payload['socket'] = null;
+        }
+
+        return $payload;
     }
 
     /**

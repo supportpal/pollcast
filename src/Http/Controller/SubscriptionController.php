@@ -107,6 +107,8 @@ class SubscriptionController
                 $this->messagesFound++;
 
                 return true;
-            });
+            })
+            // Keep the keys sequential so the response is a JSON array with messages filtered out.
+            ->values();
     }
 }

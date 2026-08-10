@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Tests\Unit;
 
+use Firebase\JWT\JWT;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
@@ -10,6 +11,7 @@ use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
 use function json_encode;
+use function now;
 use function request;
 use function session;
 
@@ -54,6 +56,51 @@ class SocketTest extends TestCase
         $socket = new Socket(app('config'), app('session.store'), request());
 
         $socket->getIdFromRequest();
+    }
+
+    public function testGetIdFromToken(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $token = $socket->setId($socketId = 'test')->encode();
+
+        $this->assertSame($socketId, $socket->getIdFromToken($token));
+    }
+
+    /**
+     * The id is only used to work out which socket an event came from, never to authenticate one,
+     * so an expired token still names the socket to leave out of its own broadcast.
+     */
+    public function testGetIdFromExpiredToken(): void
+    {
+        $token = JWT::encode([
+            'id'  => $socketId = 'test',
+            'iat' => now()->subMinutes(2)->getTimestamp(),
+            'exp' => now()->subMinute()->getTimestamp(),
+        ], app('config')->get('app.key'), 'HS256');
+
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $this->assertSame($socketId, $socket->getIdFromToken($token));
+    }
+
+    public function testGetIdFromInvalidToken(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+
+        $this->expectException(InvalidSocketException::class);
+        $socket->getIdFromToken('malformed.jwt.token');
+    }
+
+    public function testGetIdFromTokenWithoutIdProperty(): void
+    {
+        $token = JWT::encode([
+            'iat' => now()->getTimestamp(),
+            'exp' => now()->addMinute()->getTimestamp(),
+        ], app('config')->get('app.key'), 'HS256');
+
+        $socket = new Socket(app('config'), app('session.store'), request());
+
+        $this->expectException(InvalidSocketException::class);
+        $socket->getIdFromToken($token);
     }
 
     public function testJoinChannel(): void
