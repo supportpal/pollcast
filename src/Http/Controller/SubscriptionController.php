@@ -86,12 +86,13 @@ class SubscriptionController
                     // Get requested events.
                     // If they ask for a channel they're not authorised to view then we'll ignore it.
                     $events = $request->input('channels', [])[$name] ?? [];
-
-                    foreach ($events as $event) {
-                        $query->orWhere(function ($query) use ($id, $event) {
-                            $query->where('channel_id', $id)->where('event', $event);
-                        });
+                    if (empty($events)) {
+                        return;
                     }
+
+                    $query->orWhere(function ($query) use ($id, $events) {
+                        $query->where('channel_id', $id)->whereIn('event', $events);
+                    });
                 });
             })
             ->orderBy('created_at')

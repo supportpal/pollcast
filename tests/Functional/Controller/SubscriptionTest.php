@@ -2,15 +2,26 @@
 
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
+use function array_fill;
+use function array_fill_keys;
+use function array_map;
 use function implode;
+use function range;
 use function route;
+use function str_contains;
+use function str_repeat;
+use function substr_count;
 use function vsprintf;
 
 class SubscriptionTest extends TestCase
@@ -287,6 +298,87 @@ class SubscriptionTest extends TestCase
                 'message' => 'The time field is required.',
                 'errors'  => ['time' => ['The time field is required.']]
             ]);
+    }
+
+    /**
+     * The requested events are matched with one clause for the channel rather than one each, so
+     * that the size of the request body does not decide how much query gets built.
+     */
+    public function testMessagesMatchEventsWithOneClausePerChannel(): void
+    {
+        [$channel,] = $this->setupChannelAndMember();
+
+        $queries = [];
+        DB::listen(function (QueryExecuted $query) use (&$queries): void {
+            $queries[] = $query->sql;
+        });
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => array_map(fn (int $i) => 'event-' . $i, range(1, 50))],
+            'time'     => '2021-06-01 11:59:55',
+        ])
+            ->assertStatus(200);
+
+        $select = Arr::first($queries, fn (string $sql) => str_contains($sql, 'from "pollcast_message_queue"'));
+
+        $this->assertNotNull($select, 'The messages were never selected.');
+        $this->assertSame(1, substr_count($select, 'channel_id'), $select);
+    }
+
+    /**
+     * The event list drives how much of the query is built, so an unbounded one turns a request
+     * body into a far larger allocation on the server.
+     *
+     * @param mixed[] $channels
+     */
+    #[DataProvider('unboundedChannelsProvider')]
+    public function testMessagesRejectsAnUnboundedChannelMap(array $channels, string $error): void
+    {
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => $channels,
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors($error);
+    }
+
+    /**
+     * @return iterable<string, array{mixed[], string}>
+     */
+    public static function unboundedChannelsProvider(): iterable
+    {
+        yield 'too many channels' => [
+            array_fill_keys(array_map(fn (int $i) => 'channel-' . $i, range(1, 101)), []),
+            'channels',
+        ];
+
+        yield 'too many events' => [
+            ['public-channel' => array_fill(0, 101, 'test-event')],
+            'channels.public-channel',
+        ];
+
+        yield 'an event which is not a string' => [
+            ['public-channel' => [['test-event']]],
+            'channels.public-channel.0',
+        ];
+
+        yield 'an unbounded event name' => [
+            ['public-channel' => [str_repeat('a', 256)]],
+            'channels.public-channel.0',
+        ];
+    }
+
+    /**
+     * An unparseable time would otherwise reach the query as a bound on created_at.
+     */
+    public function testMessagesRejectsATimeWhichIsNotADate(): void
+    {
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => ['public-channel' => []],
+            'time'     => 'not-a-date',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('time');
     }
 
     /**
