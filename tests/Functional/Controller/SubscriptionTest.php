@@ -388,7 +388,11 @@ class SubscriptionTest extends TestCase
         ])
             ->assertStatus(200);
 
-        $select = Arr::first($queries, fn (string $sql) => str_contains($sql, 'from "pollcast_message_queue"'));
+        // Identifier quoting differs per grammar (sqlite/mysql), so match the bare table name.
+        $select = Arr::first(
+            $queries,
+            fn (string $sql) => str_starts_with($sql, 'select') && str_contains($sql, 'pollcast_message_queue')
+        );
 
         $this->assertNotNull($select, 'The messages were never selected.');
         $this->assertSame(1, substr_count($select, 'channel_id'), $select);
