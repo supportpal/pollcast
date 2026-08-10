@@ -3,6 +3,7 @@
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
 use SupportPal\Pollcast\Model\Channel;
+use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function json_encode;
@@ -14,6 +15,9 @@ class PublishTest extends TestCase
     {
         $channelName = 'public-channel';
         $channel = Channel::factory()->create(['name' => $channelName]);
+
+        // Client events may only be sent to a channel the socket has joined.
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => self::SOCKET_ID]);
 
         $event = 'test-event';
         $data = ['user_id' => 1];
@@ -31,6 +35,24 @@ class PublishTest extends TestCase
             'event'      => $event,
             'payload'    => json_encode($data),
         ]);
+    }
+
+    public function testPublishRequiresMembership(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+
+        // A membership, but for a different socket - the caller still is not a member.
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'someone-else']);
+
+        $this->postAjax(route('supportpal.pollcast.publish'), [
+            'channel_name' => 'presence-channel',
+            'event'        => 'client-typing',
+            'data'         => ['user_id' => 1],
+        ])
+            ->assertStatus(200)
+            ->assertJson([false]);
+
+        $this->assertDatabaseMissing('pollcast_message_queue', ['channel_id' => $channel->id]);
     }
 
     public function testPublishChannelNotFound(): void

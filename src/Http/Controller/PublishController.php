@@ -3,12 +3,19 @@
 namespace SupportPal\Pollcast\Http\Controller;
 
 use Illuminate\Http\JsonResponse;
+use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\PublishRequest;
 use SupportPal\Pollcast\Model\Channel;
+use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 
 class PublishController
 {
+    public function __construct(private readonly Socket $socket)
+    {
+        //
+    }
+
     /**
      * Receive messages from the client.
      */
@@ -20,6 +27,15 @@ class PublishController
             ->first();
 
         if ($channel === null) {
+            return new JsonResponse([false]);
+        }
+
+        $isMember = Member::query()
+            ->where('channel_id', $channel->id)
+            ->where('socket_id', $this->socket->getId())
+            ->exists();
+
+        if (! $isMember) {
             return new JsonResponse([false]);
         }
 
