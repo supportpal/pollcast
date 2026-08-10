@@ -22,6 +22,7 @@ use function range;
 use function route;
 use function str_contains;
 use function str_repeat;
+use function str_starts_with;
 use function substr_count;
 use function vsprintf;
 
