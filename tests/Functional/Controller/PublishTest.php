@@ -44,6 +44,25 @@ class PublishTest extends TestCase
             ->assertJson([false]);
     }
 
+    /**
+     * Publishing resolves the channel by name too, so a spelling which is not the channel's own
+     * must not reach its row here either.
+     */
+    public function testPublishDoesNotReachAnotherSpellingsChannel(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+
+        $this->postAjax(route('supportpal.pollcast.publish'), [
+            'channel_name' => 'Presence-channel',
+            'event'        => 'test-event',
+            'data'         => ['user_id' => 1],
+        ])
+            ->assertStatus(200)
+            ->assertJson([false]);
+
+        $this->assertDatabaseMissing('pollcast_message_queue', ['channel_id' => $channel->id]);
+    }
+
     public function testPublishValidation(): void
     {
         $this->postAjax(route('supportpal.pollcast.publish'))

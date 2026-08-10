@@ -20,7 +20,12 @@ class CreatePollcastChannelTable extends Migration
             $table->engine = 'InnoDB';
 
             $table->uuid('id')->primary();
-            $table->text('name');
+
+            $name = $table->text('name');
+            if (($collation = $this->nameCollation()) !== null) {
+                $name->collation($collation);
+            }
+
             $table->timestamps();
 
             $table->index('created_at');
@@ -35,5 +40,15 @@ class CreatePollcastChannelTable extends Migration
     public function down()
     {
         Schema::drop($this->table);
+    }
+
+    /**
+     * Channel names must compare byte for byte, case-sensitive.
+     */
+    private function nameCollation(): ?string
+    {
+        $driver = Schema::getConnection()->getDriverName();
+
+        return in_array($driver, ['mysql', 'mariadb'], true) ? 'utf8mb4_bin' : null;
     }
 }

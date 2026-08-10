@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Broadcast;
 use Orchestra\Testbench\Factories\UserFactory;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -52,6 +53,43 @@ class ChannelTest extends TestCase
             ->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'presence-' . $channelName])
             ->assertStatus(200)
             ->assertJson([true]);
+    }
+
+    /**
+     * Whether a channel needs authorising is decided by matching its prefix case-sensitively, so
+     * `Presence-channel` is a public channel of its own and joining it is allowed. What must not
+     * happen is that it lands the caller in the guarded `presence-channel`, which is what the
+     * utf8mb4_bin collation on `pollcast_channel.name` is there to prevent: under the
+     * case-insensitive default every spelling below selected that channel's row instead, joining
+     * the caller to it without the authorisation callback ever running.
+     */
+    #[DataProvider('aliasingSpellingProvider')]
+    public function testSubscribeNeverJoinsAnotherSpellingsChannel(string $channelName): void
+    {
+        Broadcast::channel('channel', fn (User $user) => true);
+
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+
+        $this->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => $channelName]);
+
+        $this->assertDatabaseMissing('pollcast_channel_members', ['channel_id' => $channel->id]);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function aliasingSpellingProvider(): iterable
+    {
+        yield 'capitalised'    => ['Presence-channel'];
+        yield 'upper case'     => ['PRESENCE-channel'];
+        yield 'mixed case'     => ['pReSeNcE-channel'];
+
+        // utf8mb4_unicode_ci compares at primary strength, so these were equal to
+        // `presence-channel` in the database while being different strings to PHP.
+        yield 'fullwidth p'    => ["\u{FF50}resence-channel"];
+        yield 'accented e'     => ["pr\u{00E9}sence-channel"];
+        yield 'long s'         => ["pre\u{017F}ence-channel"];
+        yield 'circled e'      => ["pr\u{24D4}sence-channel"];
     }
 
     public function testSubscribeChannelAuthErrorChannelNotFound(): void
