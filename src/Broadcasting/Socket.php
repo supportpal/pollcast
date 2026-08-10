@@ -138,6 +138,10 @@ class Socket
      */
     public function joinChannel(string $name, ?array $data = null): void
     {
+        if (! $this->isPresenceChannel($name)) {
+            $data = null;
+        }
+
         /** @var Channel $channel */
         $channel = Channel::query()->firstOrCreate(['name' => $name]);
         $channel->touch();
@@ -159,7 +163,7 @@ class Socket
     {
         $member->delete();
 
-        if (! $this->isGuardedChannel($channel->name)) {
+        if (! $this->isPresenceChannel($channel->name)) {
             return;
         }
 
@@ -189,6 +193,11 @@ class Socket
             'event'      => 'pollcast:member_added',
             'payload'    => $memberData,
         ]))->save();
+    }
+
+    private function isPresenceChannel(string $channel): bool
+    {
+        return Str::startsWith($channel, 'presence-');
     }
 
     private function getKey(): string
