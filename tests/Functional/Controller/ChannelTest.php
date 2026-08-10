@@ -56,6 +56,39 @@ class ChannelTest extends TestCase
     }
 
     /**
+     * Authorising a private channel returns the same user payload a presence channel gets. Acting
+     * on it would hand the joiner the identities of everyone else on the channel, and announce
+     * them to those members in turn - which is what choosing a private channel opted out of.
+     */
+    public function testSubscribePrivateChannelDisclosesNoOtherMembers(): void
+    {
+        $channelName = 'channel';
+        Broadcast::channel($channelName, fn (User $user) => true);
+
+        $channel = Channel::factory()->create(['name' => 'private-' . $channelName]);
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'socket_id'  => 'someone-else',
+            'data'       => ['user_id' => 99, 'user_info' => ['name' => 'Someone Else']],
+        ]);
+
+        /** @var User $user */
+        $user = UserFactory::new()->create();
+
+        $this->actingAs($user)
+            ->postAjax(route('supportpal.pollcast.subscribe'), ['channel_name' => 'private-' . $channelName])
+            ->assertStatus(200)
+            ->assertJson([true]);
+
+        $this->assertDatabaseMissing('pollcast_message_queue', ['channel_id' => $channel->id]);
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'channel_id' => $channel->id,
+            'socket_id'  => self::SOCKET_ID,
+            'data'       => null,
+        ]);
+    }
+
+    /**
      * Whether a channel needs authorising is decided by matching its prefix case-sensitively, so
      * `Presence-channel` is a public channel of its own and joining it is allowed. What must not
      * happen is that it lands the caller in the guarded `presence-channel`, which is what the
@@ -153,9 +186,9 @@ class ChannelTest extends TestCase
         return $channel;
     }
 
-    public function testUnsubscribeGuardedChannel(): void
+    public function testUnsubscribePresenceChannel(): void
     {
-        $channel = $this->testUnsubscribe('private-channel');
+        $channel = $this->testUnsubscribe('presence-channel');
 
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
@@ -163,6 +196,17 @@ class ChannelTest extends TestCase
             'event'      => 'pollcast:member_removed',
             'payload'    => json_encode([]),
         ]);
+    }
+
+    /**
+     * A private channel is authorised like a presence one but publishes nothing about who is on
+     * it, so leaving one is not announced to the other members.
+     */
+    public function testUnsubscribePrivateChannel(): void
+    {
+        $channel = $this->testUnsubscribe('private-channel');
+
+        $this->assertDatabaseMissing('pollcast_message_queue', ['channel_id' => $channel->id]);
     }
 
     public function testUnsubscribeChannelNotFound(): void
