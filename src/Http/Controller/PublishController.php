@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Http\Controller;
 
+use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\JsonResponse;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\PublishRequest;
@@ -13,6 +14,8 @@ use function array_merge;
 
 class PublishController
 {
+    use UsePusherChannelConventions;
+
     public function __construct(private readonly Socket $socket)
     {
         //
@@ -29,6 +32,11 @@ class PublishController
             ->first();
 
         if ($channel === null) {
+            return new JsonResponse([false]);
+        }
+
+        // Client events are only allowed on private and presence channels, as they are on Pusher.
+        if (! $this->isGuardedChannel($channel->name)) {
             return new JsonResponse([false]);
         }
 

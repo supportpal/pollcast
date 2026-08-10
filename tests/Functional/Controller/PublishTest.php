@@ -17,7 +17,7 @@ class PublishTest extends TestCase
 {
     public function testPublish(): void
     {
-        $channelName = 'public-channel';
+        $channelName = 'private-channel';
         $channel = Channel::factory()->create(['name' => $channelName]);
 
         // Client events may only be sent to a channel the socket has joined.
@@ -51,7 +51,7 @@ class PublishTest extends TestCase
     #[DataProvider('forgeableEventProvider')]
     public function testPublishRejectsEventsItMayNotOriginate(string $event): void
     {
-        $channelName = 'public-channel';
+        $channelName = 'private-channel';
         $channel = Channel::factory()->create(['name' => $channelName]);
         Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => self::SOCKET_ID]);
 
@@ -84,7 +84,7 @@ class PublishTest extends TestCase
      */
     public function testPublishOverwritesAClientSuppliedSocket(): void
     {
-        $channelName = 'public-channel';
+        $channelName = 'private-channel';
         $channel = Channel::factory()->create(['name' => $channelName]);
         Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => self::SOCKET_ID]);
 
@@ -106,7 +106,7 @@ class PublishTest extends TestCase
     public function testPublishRejectsUnboundedFields(string $field, mixed $value): void
     {
         $this->postAjax(route('supportpal.pollcast.publish'), [
-            'channel_name' => 'public-channel',
+            'channel_name' => 'private-channel',
             'event'        => 'client-test-event',
             'data'         => ['user_id' => 1],
             $field         => $value,
@@ -120,12 +120,46 @@ class PublishTest extends TestCase
      */
     public static function invalidPublishFieldProvider(): iterable
     {
-        yield 'channel name is not a string' => ['channel_name', ['public-channel']];
+        yield 'channel name is not a string' => ['channel_name', ['private-channel']];
         yield 'channel name is unbounded'    => ['channel_name', str_repeat('a', 256)];
         yield 'event is not a string'        => ['event', ['client-test-event']];
         yield 'event is unbounded'           => ['event', 'client-' . str_repeat('a', 250)];
         yield 'data is not an array'         => ['data', 'user_id'];
         yield 'data is unbounded'            => ['data', array_fill(0, 101, 'a')];
+    }
+
+    /**
+     * Joining a public channel is self-service - no authorisation callback runs for a name without
+     * a guarded prefix - so anyone holding a socket would be able to publish into one.
+     */
+    #[DataProvider('publicChannelProvider')]
+    public function testPublishRejectedOnAPublicChannel(string $channelName): void
+    {
+        $channel = Channel::factory()->create(['name' => $channelName]);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => self::SOCKET_ID]);
+
+        $this->postAjax(route('supportpal.pollcast.publish'), [
+            'channel_name' => $channelName,
+            'event'        => 'client-test-event',
+            'data'         => ['user_id' => 1],
+        ])
+            ->assertStatus(200)
+            ->assertJson([false]);
+
+        $this->assertDatabaseMissing('pollcast_message_queue', ['channel_id' => $channel->id]);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function publicChannelProvider(): iterable
+    {
+        yield 'a public channel'      => ['public-channel'];
+        yield 'an unprefixed channel' => ['channel'];
+
+        // The prefix is matched case-sensitively, so these are public channels of their own.
+        yield 'a miscased private'    => ['Private-channel'];
+        yield 'a miscased presence'   => ['PRESENCE-channel'];
     }
 
     public function testPublishRequiresMembership(): void
