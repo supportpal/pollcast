@@ -27,6 +27,9 @@ class CreatePollcastMessageQueueTable extends Migration
             $table->uuid('member_id')->nullable();
             $table->foreign('member_id')->references('id')->on('pollcast_channel_members')->cascadeOnDelete();
 
+            // Socket which triggered the message, excluded from its own broadcast.
+            $table->string('socket_id', 191)->nullable();
+
             $table->text('event');
             $table->mediumText('payload');
             $table->timestamps(6);

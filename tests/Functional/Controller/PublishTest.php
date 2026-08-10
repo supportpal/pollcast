@@ -38,8 +38,9 @@ class PublishTest extends TestCase
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
             'member_id'  => null,
+            'socket_id'  => self::SOCKET_ID,
             'event'      => $event,
-            'payload'    => json_encode($data + ['socket' => self::SOCKET_ID]),
+            'payload'    => json_encode($data),
         ]);
     }
 
@@ -78,11 +79,8 @@ class PublishTest extends TestCase
         yield 'a subscription ack'     => ['pollcast:subscription_succeeded'];
     }
 
-    /**
-     * The socket in a payload names who to leave out of the delivery, so a client-supplied one
-     * would let anyone withhold their event from a socket of their choosing.
-     */
-    public function testPublishOverwritesAClientSuppliedSocket(): void
+    /** A client-supplied socket would let anyone withhold their event from a socket they choose. */
+    public function testPublishRecordsTheAuthenticatedSocketNotAClientSuppliedOne(): void
     {
         $channelName = 'private-channel';
         $channel = Channel::factory()->create(['name' => $channelName]);
@@ -98,8 +96,9 @@ class PublishTest extends TestCase
 
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
-            'payload'    => json_encode(['user_id' => 1, 'socket' => self::SOCKET_ID]),
+            'socket_id'  => self::SOCKET_ID,
         ]);
+        $this->assertDatabaseMissing('pollcast_message_queue', ['socket_id' => 'another-socket']);
     }
 
     #[DataProvider('invalidPublishFieldProvider')]

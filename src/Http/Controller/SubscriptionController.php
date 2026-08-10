@@ -4,7 +4,6 @@ namespace SupportPal\Pollcast\Http\Controller;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
@@ -79,6 +78,11 @@ class SubscriptionController
             ->with('channel')
             ->where('created_at', '>=', $request->input('time'))
             ->where('created_at', '<', $time->toDateTimeString('microsecond'))
+            // Remove events triggered by the same socket (prevent unnecessary events).
+            ->where(function ($query) {
+                $query->whereNull('socket_id')
+                    ->orWhere('socket_id', '!=', $this->socket->getId());
+            })
             ->where(function ($query) use ($members, $channels, $request) {
                 $query->orWhereIn('member_id', $members->pluck('id'));
 
@@ -96,11 +100,8 @@ class SubscriptionController
             })
             ->orderBy('created_at')
             ->lazy(100)
-            // Remove events triggered by the same member (prevent unnecessary events).
-            ->filter(function (Message $message) {
-                if ($this->messagesFound >= 10
-                    || Arr::get($message->payload, 'socket') === $this->socket->getId()
-                ) {
+            ->filter(function () {
+                if ($this->messagesFound >= 10) {
                     return false;
                 }
 
