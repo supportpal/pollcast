@@ -39,10 +39,10 @@ Add the ServiceProvider class to the `providers` array in `config/app.php`. In L
 \SupportPal\Pollcast\ServiceProvider::class,
 ```
 
-Change the default broadcast driver to in your `.env` file:
+Change the default broadcast connection in your `.env` file:
 
 ```
-BROADCAST_DRIVER=pollcast
+BROADCAST_CONNECTION=pollcast
 ```
 
 Add the database tables:

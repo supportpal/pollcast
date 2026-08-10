@@ -161,6 +161,10 @@ class Socket
      */
     public function joinChannel(string $name, ?array $data = null): void
     {
+        if (! $this->isPresenceChannel($name)) {
+            $data = null;
+        }
+
         /** @var Channel $channel */
         $channel = Channel::query()->firstOrCreate(['name' => $name]);
         $channel->touch();
@@ -182,7 +186,7 @@ class Socket
     {
         $member->delete();
 
-        if (! $this->isGuardedChannel($channel->name)) {
+        if (! $this->isPresenceChannel($channel->name)) {
             return;
         }
 
@@ -236,6 +240,11 @@ class Socket
     private function idFromPayload(stdClass $payload): string
     {
         return $payload->id ?? throw new InvalidSocketException(sprintf('%s header is missing the id property.', self::HEADER));
+    }
+
+    private function isPresenceChannel(string $channel): bool
+    {
+        return Str::startsWith($channel, 'presence-');
     }
 
     private function getKey(): string

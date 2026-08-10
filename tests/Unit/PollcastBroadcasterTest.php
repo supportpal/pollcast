@@ -181,7 +181,7 @@ class PollcastBroadcasterTest extends TestCase
             'updated_at' => Carbon::now()->subDays(2)->toDateTimeString()
         ]);
 
-        $channelName2 = 'private-channel';
+        $channelName2 = 'presence-channel';
         $channel2 = Channel::factory()->create([
             'name'       => $channelName2,
             'updated_at' => Carbon::now()->subDay()->toDateTimeString()

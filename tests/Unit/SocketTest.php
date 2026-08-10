@@ -193,6 +193,10 @@ class SocketTest extends TestCase
         ]);
     }
 
+    /**
+     * A private channel is authorised like a presence one but publishes nothing about who is on
+     * it, so a member leaving is not announced to the others.
+     */
     public function testRemoveMemberFromPrivateChannel(): void
     {
         $socketId = 'test';
@@ -210,11 +214,32 @@ class SocketTest extends TestCase
             'socket_id'  => $socketId,
         ]);
 
-        $this->assertDatabaseHas('pollcast_message_queue', [
+        $this->assertDatabaseMissing('pollcast_message_queue', [
             'channel_id' => $channel->id,
-            'member_id'  => null,
             'event'      => 'pollcast:member_removed',
-            'payload'    => json_encode($member->data),
         ]);
+    }
+
+    /**
+     * Authorising a private channel yields the same user payload a presence channel gets, so it
+     * is the channel's own prefix which has to decide whether a roster is kept and published.
+     */
+    public function testJoinPrivateChannelKeepsNoRoster(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $socket->setId($socketId = 'test');
+
+        $channelName = 'private-channel';
+        $socket->joinChannel($channelName, ['user_id' => 1, 'user_info' => ['name' => 'Someone']]);
+
+        $channel = Channel::where('name', $channelName)->firstOrFail();
+
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'channel_id' => $channel->id,
+            'socket_id'  => $socketId,
+            'data'       => null,
+        ]);
+
+        $this->assertDatabaseCount('pollcast_message_queue', 0);
     }
 }
