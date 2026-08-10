@@ -9,6 +9,8 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 
+use function array_merge;
+
 class PublishController
 {
     public function __construct(private readonly Socket $socket)
@@ -42,7 +44,9 @@ class PublishController
         (new Message([
             'channel_id' => $channel->id,
             'event'      => $request->event,
-            'payload'    => $request->data,
+            // The socket names who to leave out of the delivery, so it is the publisher's own -
+            // a client-supplied one would let anyone withhold an event from a socket they choose.
+            'payload'    => array_merge($request->data, ['socket' => $this->socket->getId()]),
         ]))->save();
 
         return new JsonResponse([true]);
