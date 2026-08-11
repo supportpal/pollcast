@@ -207,6 +207,7 @@ class ChannelTest extends TestCase
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
             'member_id'  => null,
+            'socket_id'  => 'test',
             'event'      => 'pollcast:member_removed',
             'payload'    => json_encode([]),
         ]);

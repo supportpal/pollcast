@@ -192,6 +192,9 @@ class Socket
 
         (new Message([
             'channel_id' => $channel->id,
+            // The member's own socket, not the request's - garbage collection removes members
+            // from outside any request.
+            'socket_id'  => $member->socket_id,
             'event'      => 'pollcast:member_removed',
             'payload'    => $member->data ?? [],
         ]))->save();
@@ -202,7 +205,8 @@ class Socket
      */
     protected function joinedPresenceChannel(Channel $channel, Member $member, array $memberData): void
     {
-        // Broadcast subscription succeeded event to the member.
+        // Broadcast subscription succeeded event to the member. The socket must stay null here -
+        // the joiner is the recipient, and a socket_id would exclude them from their own ack.
         (new Message([
             'channel_id' => $channel->id,
             'member_id'  => $member->id,
@@ -210,9 +214,11 @@ class Socket
             'payload'    => Member::query()->where('channel_id', $channel->id)->pluck('data'),
         ]))->save();
 
-        // Broadcast member added event to everyone in the channel.
+        // Broadcast member added event to everyone else in the channel - the joiner already
+        // has themselves in the subscription_succeeded member list.
         (new Message([
             'channel_id' => $channel->id,
+            'socket_id'  => $this->getId(),
             'event'      => 'pollcast:member_added',
             'payload'    => $memberData,
         ]))->save();

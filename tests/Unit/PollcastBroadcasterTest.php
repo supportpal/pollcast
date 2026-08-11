@@ -233,7 +233,12 @@ class PollcastBroadcasterTest extends TestCase
         $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message1->id]);
         $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message2->id]);
 
-        $this->assertDatabaseHas('pollcast_message_queue', ['event' => 'pollcast:member_removed', 'payload' => json_encode($member1->data)]);
+        $this->assertDatabaseHas('pollcast_message_queue', [
+            'event'     => 'pollcast:member_removed',
+            // The removed member's own socket - there is no request socket during gc.
+            'socket_id' => $member1->socket_id,
+            'payload'   => json_encode($member1->data),
+        ]);
         $this->assertDatabaseMissing('pollcast_message_queue', ['event' => 'pollcast:member_removed', 'payload' => json_encode($member3->data)]);
     }
 
