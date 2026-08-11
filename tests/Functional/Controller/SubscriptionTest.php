@@ -148,10 +148,32 @@ class SubscriptionTest extends TestCase
             ]);
     }
 
-    /**
-     * A toOthers() broadcast names the sender's socket in its payload, which is what keeps the
-     * sender from being sent back its own event.
-     */
+    /** The socket is only used to exclude the sender, so it is never delivered to anyone. */
+    public function testMessagesDoNotDiscloseTheSendersSocket(): void
+    {
+        [$channel,] = $this->setupChannelAndMember();
+
+        $event = 'test-event';
+        Message::factory()->create([
+            'channel_id' => $channel->id,
+            'event'      => $event,
+            'socket_id'  => 'another-socket',
+            'payload'    => ['message' => 'hello'],
+            'created_at' => '2021-06-01 11:59:57',
+        ]);
+
+        $response = $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => [$event]],
+            'time'     => '2021-06-01 11:59:55',
+        ])
+            ->assertStatus(200)
+            ->assertJsonCount(1, 'events');
+
+        $this->assertSame(['message' => 'hello'], $response->json('events.0.payload'));
+        $this->assertArrayNotHasKey('socket_id', $response->json('events.0'));
+        $response->assertJsonMissing(['socket_id' => 'another-socket']);
+    }
+
     public function testMessagesExcludeTheirOwnSender(): void
     {
         [$channel,] = $this->setupChannelAndMember();
@@ -160,13 +182,13 @@ class SubscriptionTest extends TestCase
         Message::factory()->create([
             'channel_id' => $channel->id,
             'event'      => $event,
-            'payload'    => ['socket' => self::SOCKET_ID],
+            'socket_id'  => self::SOCKET_ID,
             'created_at' => '2021-06-01 11:59:57',
         ]);
         $message = Message::factory()->create([
             'channel_id' => $channel->id,
             'event'      => $event,
-            'payload'    => ['socket' => 'another-socket'],
+            'socket_id'  => 'another-socket',
             'created_at' => '2021-06-01 11:59:58',
         ]);
 

@@ -34,12 +34,16 @@ class Message extends Model
     protected $guarded = [];
 
     /** @var list<string> */
-    protected $fillable = ['channel_id', 'member_id', 'event', 'payload'];
+    protected $fillable = ['channel_id', 'member_id', 'socket_id', 'event', 'payload'];
+
+    /** @var list<string> */
+    protected $hidden = ['socket_id'];
 
     /** @var array<string, string> */
     protected $casts = [
         'channel_id' => 'string',
         'member_id'  => 'string',
+        'socket_id'  => 'string',
         'event'      => 'string',
         'payload'    => 'json',
     ];

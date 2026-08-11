@@ -98,15 +98,19 @@ class PollcastBroadcasterTest extends TestCase
         $broadcaster->channel($channelName2, $userFunction);
 
         $eventName = 'test-event';
-        $broadcaster->broadcast([$channelName1, $channelName2], $eventName, ['socket' => $this->token]);
+        $broadcaster->broadcast([$channelName1, $channelName2], $eventName, [
+            'message' => 'hello',
+            'socket'  => $this->token,
+        ]);
 
         $channels = Channel::get();
         foreach ($channels as $channel) {
             $this->assertDatabaseHas('pollcast_message_queue', [
                 'channel_id' => $channel->id,
                 'member_id'  => null,
+                'socket_id'  => self::SOCKET_ID,
                 'event'      => $eventName,
-                'payload'    => json_encode(['socket' => self::SOCKET_ID]),
+                'payload'    => json_encode(['message' => 'hello']),
             ]);
         }
 
@@ -114,24 +118,28 @@ class PollcastBroadcasterTest extends TestCase
     }
 
     /**
-     * A toOthers() broadcast carries the sender's X-Socket-ID header into the payload, and for this
-     * driver that header is the token which proves socket identity. The payload is served to every
-     * other member of the channel, so only the socket id it names may be persisted.
+     * The payload is served to every other member of the channel, and for this driver the socket
+     * is a signed token.
      */
-    public function testBroadcastDoesNotPersistTheSendersSocketToken(): void
+    public function testBroadcastPullsTheSocketOutOfThePayload(): void
     {
         $broadcaster = $this->setupBroadcaster(request());
 
-        $broadcaster->broadcast(['public-channel'], 'test-event', ['socket' => $this->token]);
+        $broadcaster->broadcast(['public-channel'], 'test-event', [
+            'message' => 'hello',
+            'socket'  => $this->token,
+        ]);
 
-        $this->assertDatabaseMissing('pollcast_message_queue', ['payload' => json_encode(['socket' => $this->token])]);
-        $this->assertDatabaseHas('pollcast_message_queue', ['payload' => json_encode(['socket' => self::SOCKET_ID])]);
+        $this->assertDatabaseHas('pollcast_message_queue', [
+            'socket_id' => self::SOCKET_ID,
+            'payload'   => json_encode(['message' => 'hello']),
+        ]);
+
+        $payload = Message::firstOrFail()->payload;
+        $this->assertArrayNotHasKey('socket', $payload);
     }
 
-    /**
-     * The token is minted for a minute, but a queued broadcast may not be written until after it
-     * has expired - the socket it names is still the one to leave out of its own broadcast.
-     */
+    /** A queued broadcast may not be written until after the token has expired. */
     public function testBroadcastResolvesAnExpiredSocketToken(): void
     {
         $broadcaster = $this->setupBroadcaster(request());
@@ -144,7 +152,7 @@ class PollcastBroadcasterTest extends TestCase
 
         $broadcaster->broadcast(['public-channel'], 'test-event', ['socket' => $token]);
 
-        $this->assertDatabaseHas('pollcast_message_queue', ['payload' => json_encode(['socket' => self::SOCKET_ID])]);
+        $this->assertDatabaseHas('pollcast_message_queue', ['socket_id' => self::SOCKET_ID]);
     }
 
     #[DataProvider('unresolvableSocketProvider')]
@@ -152,9 +160,12 @@ class PollcastBroadcasterTest extends TestCase
     {
         $broadcaster = $this->setupBroadcaster(request());
 
-        $broadcaster->broadcast(['public-channel'], 'test-event', ['socket' => $socket]);
+        $broadcaster->broadcast(['public-channel'], 'test-event', ['message' => 'hello', 'socket' => $socket]);
 
-        $this->assertDatabaseHas('pollcast_message_queue', ['payload' => json_encode(['socket' => null])]);
+        $this->assertDatabaseHas('pollcast_message_queue', [
+            'socket_id' => null,
+            'payload'   => json_encode(['message' => 'hello']),
+        ]);
     }
 
     /**

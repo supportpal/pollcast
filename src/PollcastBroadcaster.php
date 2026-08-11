@@ -5,6 +5,7 @@ namespace SupportPal\Pollcast;
 use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Broadcasting\Socket;
@@ -86,7 +87,7 @@ class PollcastBroadcaster extends Broadcaster
             $this->gc();
         }
 
-        $payload = $this->replaceSocketToken($payload);
+        $socket = $this->pullSocket($payload);
 
         $messages = new Collection;
         foreach ($channels as $channel) {
@@ -94,6 +95,7 @@ class PollcastBroadcaster extends Broadcaster
 
             $message = new Message([
                 'channel_id' => $channel->id,
+                'socket_id'  => $socket,
                 'event'      => $event,
                 'payload'    => $payload,
             ]);
@@ -105,33 +107,26 @@ class PollcastBroadcaster extends Broadcaster
     }
 
     /**
-     * Swap the sender's socket token for the socket id it names.
+     * Pull the sender's socket out of the payload and resolve the id its token names.
      *
-     * For a toOthers() broadcast Laravel copies the raw X-Socket-ID header into the payload, and
-     * for this driver that header is the signed token proving socket identity. The payload is
-     * persisted and then served to every other member of the channel, so storing the token as-is
-     * would hand each of them a working credential for the sender's socket. The id it names is
-     * all the delivery side needs to leave the sender out of its own broadcast.
+     * The X-Socket-ID header is a credential, so it is never persisted with the payload.
      *
      * @param  mixed[] $payload
-     * @return mixed[]
      */
-    protected function replaceSocketToken(array $payload): array
+    protected function pullSocket(array &$payload): ?string
     {
-        if (! isset($payload['socket'])) {
-            return $payload;
+        $socket = Arr::pull($payload, 'socket');
+
+        if (! is_string($socket)) {
+            return null;
         }
 
         try {
-            $payload['socket'] = is_string($payload['socket'])
-                ? $this->socket->getIdFromToken($payload['socket'])
-                : null;
+            return $this->socket->getIdFromToken($socket);
         } catch (InvalidSocketException) {
-            // Anything we cannot resolve to a socket names nobody to exclude.
-            $payload['socket'] = null;
+            // Nobody to exclude.
+            return null;
         }
-
-        return $payload;
     }
 
     /**
