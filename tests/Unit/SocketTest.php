@@ -137,9 +137,12 @@ class SocketTest extends TestCase
             'data'       => json_encode($data),
         ]);
 
+        // The ack must carry no socket - the joiner is the recipient, and a socket_id would
+        // exclude them from it.
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
             'member_id'  => $member->id,
+            'socket_id'  => null,
             'event'      => 'pollcast:subscription_succeeded',
             'payload'    => json_encode([$data]),
         ]);
@@ -147,6 +150,7 @@ class SocketTest extends TestCase
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
             'member_id'  => null,
+            'socket_id'  => $socketId,
             'event'      => 'pollcast:member_added',
             'payload'    => json_encode($data),
         ]);
@@ -188,6 +192,7 @@ class SocketTest extends TestCase
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,
             'member_id'  => null,
+            'socket_id'  => $member->socket_id,
             'event'      => 'pollcast:member_removed',
             'payload'    => json_encode([]),
         ]);
