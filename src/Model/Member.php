@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Member extends Model
 {
+    /** @use HasFactory<\Database\Factories\MemberFactory> */
     use HasFactory, HasUuids;
 
     /** @var string */
