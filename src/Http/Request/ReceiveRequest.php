@@ -11,10 +11,10 @@ use function is_string;
 class ReceiveRequest extends FormRequest
 {
     /** How many channels one poll may ask about. */
-    public const int MAX_CHANNELS = 100;
+    public const MAX_CHANNELS = 100;
 
     /** How many events one poll may ask for per channel. */
-    public const int MAX_EVENTS = 100;
+    public const MAX_EVENTS = 100;
 
     public function authorize(): bool
     {

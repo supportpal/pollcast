@@ -10,10 +10,10 @@ class PublishRequest extends FormRequest
      * Client events carry this prefix, as they do on Pusher, so that nothing a client publishes
      * can be mistaken for an event the server broadcast.
      */
-    public const string EVENT_PREFIX = 'client-';
+    public const EVENT_PREFIX = 'client-';
 
     /** Namespace reserved for the events this package writes itself. */
-    public const string RESERVED_PREFIX = 'pollcast:';
+    public const RESERVED_PREFIX = 'pollcast:';
 
     public function authorize(): bool
     {
