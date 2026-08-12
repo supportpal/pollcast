@@ -5,8 +5,8 @@ namespace SupportPal\Pollcast\Tests;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Testing\TestResponse;
 use SupportPal\Pollcast\ServiceProvider;
-
 use Symfony\Component\HttpFoundation\Response;
+
 use function getenv;
 use function realpath;
 

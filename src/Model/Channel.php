@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Channel extends Model
 {
-    /** @use HasFactory<\Database\Factories\ChannelFactory> */
+    /** @use HasFactory<ChannelFactory> */
     use HasFactory, HasUuids;
 
     /** @var string */
