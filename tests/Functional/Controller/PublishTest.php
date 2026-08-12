@@ -11,10 +11,18 @@ use SupportPal\Pollcast\Tests\TestCase;
 use function array_fill;
 use function json_encode;
 use function route;
+use function session;
 use function str_repeat;
 
 class PublishTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        session([Socket::UUID => self::SOCKET_ID]);
+    }
+
     public function testPublish(): void
     {
         $channelName = 'private-channel';
@@ -32,8 +40,6 @@ class PublishTest extends TestCase
         ])
             ->assertStatus(200)
             ->assertJson([true]);
-
-        $this->assertStringStartsWith('eyJ', $response->headers->get(Socket::HEADER) ?? '');
 
         $this->assertDatabaseHas('pollcast_message_queue', [
             'channel_id' => $channel->id,

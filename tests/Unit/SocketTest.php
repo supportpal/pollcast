@@ -151,8 +151,9 @@ class SocketTest extends TestCase
      */
     public function testJoinPrivateChannelKeepsNoRoster(): void
     {
-        $socket = new Socket(app('config'), app('session.store'), request());
-        $socket->setId($socketId = 'test');
+        session([Socket::UUID => $socketId = 'test']);
+
+        $socket = new Socket(app('session.store'));
 
         $channelName = 'private-channel';
         $socket->joinChannel($channelName, ['user_id' => 1, 'user_info' => ['name' => 'Someone']]);

@@ -4,6 +4,7 @@ namespace SupportPal\Pollcast\Broadcasting;
 
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Contracts\Session\Session;
+use Illuminate\Support\Str;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
@@ -108,15 +109,5 @@ class Socket
     private function isPresenceChannel(string $channel): bool
     {
         return Str::startsWith($channel, 'presence-');
-    }
-
-    private function getKey(): string
-    {
-        return $this->config->get('app.key');
-    }
-
-    private function getAlgorithm(): string
-    {
-        return 'HS256';
     }
 }

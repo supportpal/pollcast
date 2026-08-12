@@ -11,6 +11,8 @@ use function realpath;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
+    public const SOCKET_ID = 'test';
+
     /**
      * Setup the test environment.
      */

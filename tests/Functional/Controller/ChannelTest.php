@@ -62,6 +62,8 @@ class ChannelTest extends TestCase
      */
     public function testSubscribePrivateChannelDisclosesNoOtherMembers(): void
     {
+        session([Socket::UUID => self::SOCKET_ID]);
+
         $channelName = 'channel';
         Broadcast::channel($channelName, fn (User $user) => true);
 

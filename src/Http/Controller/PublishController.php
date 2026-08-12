@@ -42,7 +42,7 @@ class PublishController
 
         $isMember = Member::query()
             ->where('channel_id', $channel->id)
-            ->where('socket_id', $this->socket->getId())
+            ->where('socket_id', $this->socket->id())
             ->exists();
 
         if (! $isMember) {
@@ -54,7 +54,7 @@ class PublishController
             'event'      => $request->event,
             // The socket names who to leave out of the delivery, so it is the publisher's own -
             // a client-supplied one would let anyone withhold an event from a socket they choose.
-            'payload'    => array_merge($request->data, ['socket' => $this->socket->getId()]),
+            'payload'    => array_merge($request->data, ['socket' => $this->socket->id()]),
         ]))->save();
 
         return new JsonResponse([true]);

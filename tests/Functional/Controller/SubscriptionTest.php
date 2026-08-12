@@ -14,9 +14,17 @@ use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
+use function array_fill;
+use function array_fill_keys;
+use function array_map;
 use function implode;
+use function range;
 use function route;
 use function session;
+use function str_contains;
+use function str_repeat;
+use function str_starts_with;
+use function substr_count;
 use function vsprintf;
 
 class SubscriptionTest extends TestCase
@@ -179,6 +187,8 @@ class SubscriptionTest extends TestCase
      */
     public function testMessagesExcludeTheBacklogFromBeforeTheCallerJoined(): void
     {
+        session([Socket::UUID => static::SOCKET_ID]);
+
         $channel = Channel::factory()->create(['name' => 'private-channel']);
         Member::factory()->create([
             'channel_id' => $channel->id,
@@ -209,6 +219,8 @@ class SubscriptionTest extends TestCase
      */
     public function testMessagesAreBoundedByEachChannelsOwnJoin(): void
     {
+        session([Socket::UUID => static::SOCKET_ID]);
+
         $event = 'test-event';
 
         [$early, $late] = Collection::make(['2021-06-01 11:59:50', '2021-06-01 11:59:57'])
