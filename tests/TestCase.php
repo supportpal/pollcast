@@ -5,7 +5,6 @@ namespace SupportPal\Pollcast\Tests;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Testing\TestResponse;
 use SupportPal\Pollcast\ServiceProvider;
-use Symfony\Component\HttpFoundation\Response;
 
 use function getenv;
 use function realpath;
@@ -124,7 +123,6 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      *
      * @param  string $route
      * @param  mixed[]  $data
-     * @return TestResponse<Response>
      */
     public function postAjax(string $route, array $data = []): TestResponse
     {

@@ -18,7 +18,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Message extends Model
 {
-    /** @use HasFactory<MessageFactory> */
     use HasFactory, HasUuids;
 
     /** @var string */
