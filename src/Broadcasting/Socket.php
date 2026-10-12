@@ -80,10 +80,14 @@ class Socket
         return $this->id;
     }
 
-    public function getIdFromRequest(): string
+    public function getIdFromRequest(bool $allowExpired = false): string
     {
         $token = $this->request->header(self::HEADER);
         if (is_string($token)) {
+            if ($allowExpired) {
+                return $this->getIdFromToken($token);
+            }
+
             try {
                 $decoded = $this->decode($token);
             } catch (ExpiredException) {
@@ -132,7 +136,7 @@ class Socket
                 return true;
             }
 
-            $this->getIdFromRequest();
+            $this->getIdFromRequest(true);
         } catch (Exception) {
             return false;
         }
@@ -145,7 +149,7 @@ class Socket
         if (! $this->hasId()) {
             $id = $this->createId();
         } else {
-            $id = $this->getIdFromSession() ?? $this->getIdFromRequest();
+            $id = $this->getIdFromSession() ?? $this->getIdFromRequest(true);
         }
 
         return $id;
