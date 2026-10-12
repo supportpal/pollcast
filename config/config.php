@@ -15,6 +15,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Presence Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Here you may specify how many seconds a presence channel member can go
+    | without polling before it is no longer listed in the channel. This
+    | must allow for browsers slowing down timers in background tabs.
+    |
+    */
+    'presence_timeout' => 180,
+
+    /*
+    |--------------------------------------------------------------------------
     | Garbage Collection Lottery
     |--------------------------------------------------------------------------
     |

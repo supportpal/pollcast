@@ -7,10 +7,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\LazyCollection;
+use Illuminate\Support\Str;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Http\Request\ReceiveRequest;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
+
+use function array_diff;
+use function array_keys;
+use function array_map;
+use function array_values;
+use function in_array;
 
 class SubscriptionController
 {
@@ -34,21 +41,45 @@ class SubscriptionController
             return new JsonResponse(['status' => 'error']);
         }
 
-        // Update the last active time of the member.
+        $channels = $this->getAuthorisedChannels();
+        $requested = array_map('strval', array_keys($request->input('channels', [])));
+        $listening = $channels->filter(fn (string $name) => in_array($name, $requested, true));
+
+        // Update the last active time of only the channels being listened to. The socket is shared by every page in
+        // the browser, so a page which left without unsubscribing goes stale while the others keep polling.
         Member::query()
-            ->whereIn('id', $members->pluck('id'))
+            ->whereIn('id', $members->whereIn('channel_id', $listening->keys())->pluck('id'))
             ->update(['updated_at' => $time]);
 
         $messages = new Collection;
-        $channels = $this->getAuthorisedChannels();
         if ($channels->count() > 0) {
             $messages = $this->getMessagesForRequest($time, $members, $request, $channels);
         }
 
         return new JsonResponse([
-            'status' => 'success',
-            'time'   => $time->toDateTimeString('microsecond'),
-            'events' => $messages
+            'status'  => 'success',
+            'time'    => $time->toDateTimeString('microsecond'),
+            'events'  => $messages,
+            'members' => $this->getPresenceMembers($listening),
+            // Channels the socket is no longer a member of, for example garbage collected while the page was in the
+            // background, so the client can subscribe again.
+            'missing' => array_values(array_diff($requested, $channels->all())),
+        ]);
+    }
+
+    /**
+     * The active members of each presence channel, so the client can keep its member list in sync.
+     *
+     * @param Collection<string, string> $channels
+     * @return Collection<string, Collection<int, mixed>>
+     */
+    protected function getPresenceMembers(Collection $channels): Collection
+    {
+        $presence = $channels->filter(fn (string $name) => Str::startsWith($name, 'presence-'));
+        $members = $this->socket->activeMembers($presence->keys()->all())->groupBy('channel_id');
+
+        return $presence->mapWithKeys(fn (string $name, string $id) => [
+            $name => $members->get($id, new Collection)->pluck('data')->values(),
         ]);
     }
 

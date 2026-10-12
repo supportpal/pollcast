@@ -16,6 +16,7 @@ use SupportPal\Pollcast\Tests\TestCase;
 
 use function array_fill;
 use function array_fill_keys;
+use function array_keys;
 use function array_map;
 use function implode;
 use function range;
@@ -355,6 +356,83 @@ class SubscriptionTest extends TestCase
             'id'         => $member2->id,
             'updated_at' => Carbon::now()->toDateTimeString(),
         ]);
+    }
+
+    public function testMessagesMemberUpdatedAtNotTouchedForChannelsNotListenedTo(): void
+    {
+        [$channel1, $member1] = $this->setupChannelAndMember();
+        $channel2 = Channel::factory()->create(['name' => 'presence-channel']);
+        $member2 = Member::factory()->create([
+            'channel_id' => $channel2->id,
+            'socket_id'  => static::SOCKET_ID,
+            'updated_at' => Carbon::now()->subHour()->toDateTimeString(),
+        ]);
+
+        // Another page on the same socket which only listens to the first channel.
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel1->name],
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
+        ])
+            ->assertStatus(200)
+            ->assertJson(['status' => 'success']);
+
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'id'         => $member1->id,
+            'updated_at' => Carbon::now()->toDateTimeString(),
+        ]);
+        $this->assertDatabaseHas('pollcast_channel_members', [
+            'id'         => $member2->id,
+            'updated_at' => Carbon::now()->subHour()->toDateTimeString(),
+        ]);
+    }
+
+    public function testMessagesPresenceMembers(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+        $member = Member::factory()->create([
+            'channel_id' => $channel->id,
+            'socket_id'  => static::SOCKET_ID,
+            'data'       => ['user_id' => 1],
+        ]);
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'data'       => ['user_id' => 2],
+            'updated_at' => Carbon::now()->subMinutes(2)->toDateTimeString(),
+        ]);
+        // Left without unsubscribing.
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'data'       => ['user_id' => 3],
+            'updated_at' => Carbon::now()->subMinutes(4)->toDateTimeString(),
+        ]);
+        // Not a presence channel.
+        [$publicChannel,] = $this->setupChannelAndMember();
+
+        $members = $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name => ['pollcast:member_added'], $publicChannel->name],
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
+        ])
+            ->assertStatus(200)
+            ->assertJson(['status' => 'success'])
+            ->json('members');
+
+        $this->assertSame([$channel->name], array_keys($members));
+        $this->assertEqualsCanonicalizing([['user_id' => 1], ['user_id' => 2]], $members[$channel->name]);
+    }
+
+    public function testMessagesMissingChannels(): void
+    {
+        [$channel,] = $this->setupChannelAndMember();
+
+        $this->postAjax(route('supportpal.pollcast.receive'), [
+            'channels' => [$channel->name, 'presence-channel'],
+            'time'     => Carbon::now()->toDateTimeString('microsecond'),
+        ])
+            ->assertStatus(200)
+            ->assertJson([
+                'status'  => 'success',
+                'missing' => ['presence-channel'],
+            ]);
     }
 
     public function testMessagesMemberNotFound(): void
