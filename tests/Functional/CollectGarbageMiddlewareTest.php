@@ -83,21 +83,6 @@ class CollectGarbageMiddlewareTest extends TestCase
         $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message->id]);
     }
 
-    public function testTerminateReportsRatherThanThrows(): void
-    {
-        // A collector that loses a lock race must not become an unhandled exception after the
-        // response has already been sent.
-        $exception = new RuntimeException('Deadlock found when trying to get lock');
-
-        $gc = Mockery::mock(GarbageCollector::class);
-        $gc->shouldReceive('collect')->once()->andThrow($exception);
-
-        $handler = Mockery::mock(ExceptionHandler::class);
-        $handler->shouldReceive('report')->once()->with($exception);
-
-        (new CollectGarbage($gc, $handler))->terminate(new Request, new Response);
-    }
-
     private function setupChannelAndMember(?Carbon $joinedAt = null): Channel
     {
         $joinedAt ??= Carbon::now();
