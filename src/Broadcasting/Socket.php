@@ -31,6 +31,9 @@ class Socket
 
     public const string HEADER = 'X-Socket-ID';
 
+    /** How long an encoded socket token is valid for, in seconds. */
+    public const int LIFETIME = 60;
+
     /** Session key, only for backwards compatibility. */
     public const string UUID = 'pollcast:uuid';
 
@@ -58,7 +61,7 @@ class Socket
         $payload = [
             'id'  => $this->id,
             'iat' => now()->getTimestamp(), // Issued at
-            'exp' => now()->addMinute()->getTimestamp(), // Expiry
+            'exp' => now()->addSeconds(self::LIFETIME)->getTimestamp(), // Expiry
         ];
 
         return JWT::encode($payload, $this->getKey(), $this->getAlgorithm());
@@ -142,13 +145,13 @@ class Socket
 
     public function createIdIfNotExists(): string
     {
-        if (! $this->hasId()) {
-            $id = $this->createId();
-        } else {
-            $id = $this->getIdFromSession() ?? $this->getIdFromRequest();
+        if ($this->hasId()) {
+            return $this->getIdFromSession() ?? $this->getIdFromRequest();
         }
 
-        return $id;
+        $this->removeExpiredSocket();
+
+        return $this->createId();
     }
 
     public function createId(): string
@@ -177,6 +180,7 @@ class Socket
             'user_id' => isset($data['user_id']) ? (string) $data['user_id'] : null,
             'data'    => $data,
         ]);
+        $member->touch();
 
         if ($data === null) {
             return;
@@ -276,6 +280,29 @@ class Socket
     private function idFromPayload(stdClass $payload): string
     {
         return $payload->id ?? throw new InvalidSocketException(sprintf('%s header is missing the id property.', self::HEADER));
+    }
+
+    private function removeExpiredSocket(): void
+    {
+        $token = $this->request->header(self::HEADER);
+        if (! is_string($token)) {
+            return;
+        }
+
+        try {
+            $id = $this->getIdFromToken($token);
+        } catch (InvalidSocketException) {
+            return;
+        }
+
+        Member::query()
+            ->with('channel')
+            ->where('socket_id', $id)
+            ->each(function (Member $member) {
+                /** @var Channel $channel */
+                $channel = $member->channel;
+                $this->removeMemberFromChannel($member, $channel);
+            });
     }
 
     private function isPresenceChannel(string $channel): bool
