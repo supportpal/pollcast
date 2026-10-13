@@ -142,13 +142,13 @@ class Socket
 
     public function createIdIfNotExists(): string
     {
-        if (! $this->hasId()) {
-            $id = $this->createId();
-        } else {
-            $id = $this->getIdFromSession() ?? $this->getIdFromRequest();
+        if ($this->hasId()) {
+            return $this->getIdFromSession() ?? $this->getIdFromRequest();
         }
 
-        return $id;
+        $this->removeExpiredSocket();
+
+        return $this->createId();
     }
 
     public function createId(): string
@@ -246,6 +246,29 @@ class Socket
     private function idFromPayload(stdClass $payload): string
     {
         return $payload->id ?? throw new InvalidSocketException(sprintf('%s header is missing the id property.', self::HEADER));
+    }
+
+    private function removeExpiredSocket(): void
+    {
+        $token = $this->request->header(self::HEADER);
+        if (! is_string($token)) {
+            return;
+        }
+
+        try {
+            $id = $this->getIdFromToken($token);
+        } catch (InvalidSocketException) {
+            return;
+        }
+
+        Member::query()
+            ->with('channel')
+            ->where('socket_id', $id)
+            ->each(function (Member $member) {
+                /** @var Channel $channel */
+                $channel = $member->channel;
+                $this->removeMemberFromChannel($member, $channel);
+            });
     }
 
     private function isPresenceChannel(string $channel): bool
