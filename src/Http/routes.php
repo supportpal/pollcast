@@ -2,12 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use SupportPal\Pollcast\Http\Middleware\AddSocketId;
+use SupportPal\Pollcast\Http\Middleware\CollectGarbage;
 use SupportPal\Pollcast\Http\Middleware\VerifySocketId;
 
 Route::group([
     'prefix' => 'pollcast',
     'namespace' => 'SupportPal\Pollcast\Http\Controller',
-    'middleware' => ['web', AddSocketId::class],
+    'middleware' => ['web', AddSocketId::class, CollectGarbage::class],
 ], function () {
     Route::post('connect', [
         'as'   => 'supportpal.pollcast.connect',

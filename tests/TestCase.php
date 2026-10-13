@@ -86,6 +86,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set('app.key', 'slHhRrJMrmlsM6oC0L1fJp5n4QS8pg7m');
         $app['config']->set('database.default', 'testing');
         $app['config']->set('broadcasting.default', 'pollcast');
+        // Always win the lottery so garbage collection is deterministic under test.
+        $app['config']->set('pollcast.gc_lottery', [1, 1]);
 
         if (getenv('DB_CONNECTION') !== 'mysql') {
             return;
