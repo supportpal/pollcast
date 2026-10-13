@@ -18,8 +18,8 @@ return [
     | Garbage Collection Lottery
     |--------------------------------------------------------------------------
     |
-    | Here are the chances that it will run garbage collection on a given
-    | broadcasting of events. By default, the odds are 1 out of 10.
+    | Here are the chances that garbage collection runs after a given pollcast
+    | request has been sent to the client. By default, the odds are 1 out of 10.
     |
     */
     'gc_lottery' => [1, 10],

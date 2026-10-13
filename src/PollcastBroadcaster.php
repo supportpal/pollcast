@@ -6,18 +6,14 @@ use Illuminate\Broadcasting\Broadcasters\Broadcaster;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
-use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-use function config;
 use function is_string;
-use function random_int;
 
 class PollcastBroadcaster extends Broadcaster
 {
@@ -83,10 +79,6 @@ class PollcastBroadcaster extends Broadcaster
      */
     public function broadcast(array $channels, mixed $event, array $payload = [])
     {
-        if ($this->hitsLottery()) {
-            $this->gc();
-        }
-
         $socket = $this->pullSocket($payload);
 
         $messages = new Collection;
@@ -127,42 +119,5 @@ class PollcastBroadcaster extends Broadcaster
             // Nobody to exclude.
             return null;
         }
-    }
-
-    /**
-     * Garbage collection for old events.
-     */
-    protected function gc(): void
-    {
-        Message::query()
-            ->where('created_at', '<', Carbon::now()->subHour()->toDateTimeString())
-            ->delete();
-
-        Member::query()
-            ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subHour()->toDateTimeString())
-            ->each(function (Member $member) {
-                /** @var Channel $channel */
-                $channel = $member->channel;
-                $this->socket->removeMemberFromChannel($member, $channel);
-            });
-
-        Channel::query()
-            ->leftJoin('pollcast_channel_members', 'pollcast_channel_members.channel_id', '=', 'pollcast_channel.id')
-            ->where('pollcast_channel.updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
-            ->whereNull('pollcast_channel_members.socket_id')
-            ->delete();
-    }
-
-    /**
-     * Determine if the odds hit the lottery (1 in 10).
-     *
-     * @return bool
-     */
-    protected function hitsLottery(): bool
-    {
-        $lottery = config('pollcast.gc_lottery', [1, 10]);
-
-        return random_int(1, $lottery[1]) <= $lottery[0];
     }
 }
