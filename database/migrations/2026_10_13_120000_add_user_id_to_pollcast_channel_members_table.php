@@ -20,8 +20,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table($this->table, function (Blueprint $table) {
+            $table->dropForeign(['channel_id']);
             $table->dropIndex(['channel_id', 'user_id']);
             $table->dropColumn('user_id');
+            $table->foreign('channel_id')->references('id')->on('pollcast_channel')->cascadeOnDelete();
         });
     }
 };
