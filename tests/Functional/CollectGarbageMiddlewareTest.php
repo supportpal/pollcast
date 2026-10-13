@@ -2,7 +2,14 @@
 
 namespace SupportPal\Pollcast\Tests\Functional;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Mockery;
+use RuntimeException;
+use SupportPal\Pollcast\GarbageCollector;
+use SupportPal\Pollcast\Http\Middleware\CollectGarbage;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
@@ -74,6 +81,21 @@ class CollectGarbageMiddlewareTest extends TestCase
             ->assertJsonPath('events.0.id', $message->id);
 
         $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message->id]);
+    }
+
+    public function testTerminateReportsRatherThanThrows(): void
+    {
+        // A collector that loses a lock race must not become an unhandled exception after the
+        // response has already been sent.
+        $exception = new RuntimeException('Deadlock found when trying to get lock');
+
+        $gc = Mockery::mock(GarbageCollector::class);
+        $gc->shouldReceive('collect')->once()->andThrow($exception);
+
+        $handler = Mockery::mock(ExceptionHandler::class);
+        $handler->shouldReceive('report')->once()->with($exception);
+
+        (new CollectGarbage($gc, $handler))->terminate(new Request, new Response);
     }
 
     private function setupChannelAndMember(?Carbon $joinedAt = null): Channel

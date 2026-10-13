@@ -88,6 +88,8 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         $app['config']->set('broadcasting.default', 'pollcast');
         // Always win the lottery so garbage collection is deterministic under test.
         $app['config']->set('pollcast.gc_lottery', [1, 1]);
+        // The array store supports atomic locks, which garbage collection relies on.
+        $app['config']->set('cache.default', 'array');
 
         if (getenv('DB_CONNECTION') !== 'mysql') {
             return;

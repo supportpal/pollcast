@@ -6,6 +6,9 @@ use Closure;
 use Illuminate\Http\Request;
 use SupportPal\Pollcast\GarbageCollector;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
+
+use function report;
 
 /**
  * Runs garbage collection after the response has been sent.
@@ -24,6 +27,10 @@ class CollectGarbage
 
     public function terminate(Request $request, Response $response): void
     {
-        $this->gc->collect();
+        try {
+            $this->gc->collect();
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 }

@@ -3,6 +3,8 @@
 namespace SupportPal\Pollcast\Tests\Unit;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use SupportPal\Pollcast\GarbageCollector;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
@@ -10,8 +12,11 @@ use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
+use function array_chunk;
+use function array_map;
 use function config;
 use function json_encode;
+use function range;
 
 class GarbageCollectorTest extends TestCase
 {
@@ -54,7 +59,7 @@ class GarbageCollectorTest extends TestCase
             'created_at' => Carbon::now()->subHours(2)->toDateTimeString(),
         ]);
 
-        app(GarbageCollector::class)->collect();
+        $this->assertTrue(app(GarbageCollector::class)->collect());
 
         $this->assertDatabaseMissing('pollcast_channel', ['id' => $channel1->id]);
         $this->assertDatabaseHas('pollcast_channel', ['id' => $channel2->id]);
@@ -102,5 +107,79 @@ class GarbageCollectorTest extends TestCase
         $this->assertDatabaseHas('pollcast_channel', ['id' => $channel1->id]);
         $this->assertDatabaseMissing('pollcast_channel', ['id' => $channel2->id]);
         $this->assertDatabaseHas('pollcast_channel_members', ['id' => $member->id]);
+    }
+
+    public function testLostLotteryDoesNotCollect(): void
+    {
+        config()->set('pollcast.gc_lottery', [0, 1]);
+        $message = Message::factory()->create(['created_at' => Carbon::now()->subHours(2)->toDateTimeString()]);
+
+        $this->assertFalse(app(GarbageCollector::class)->collect());
+
+        $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message->id]);
+    }
+
+    public function testSkipsWhenAnotherCollectorHoldsTheLock(): void
+    {
+        $message = Message::factory()->create(['created_at' => Carbon::now()->subHours(2)->toDateTimeString()]);
+
+        $lock = Cache::lock(GarbageCollector::LOCK, GarbageCollector::LOCK_TTL);
+        $this->assertTrue($lock->get());
+
+        try {
+            $this->assertFalse(app(GarbageCollector::class)->collect());
+            $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message->id]);
+        } finally {
+            $lock->release();
+        }
+
+        // Once the other collector has finished, the next one runs.
+        $this->assertTrue(app(GarbageCollector::class)->collect());
+        $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message->id]);
+    }
+
+    public function testReleasesTheLockAfterCollecting(): void
+    {
+        app(GarbageCollector::class)->collect();
+
+        $lock = Cache::lock(GarbageCollector::LOCK, GarbageCollector::LOCK_TTL);
+        $this->assertTrue($lock->get());
+        $lock->release();
+    }
+
+    public function testDeletesStaleMessagesInBatches(): void
+    {
+        /** @var Channel $channel */
+        $channel = Channel::factory()->create();
+        $stale = Carbon::now()->subHours(2)->toDateTimeString();
+        $fresh = Carbon::now()->toDateTimeString();
+
+        // More than one batch of stale rows, plus a fresh one that must survive every pass.
+        $total = GarbageCollector::MESSAGE_BATCH * 2 + 1;
+        foreach (array_chunk(range(1, $total), 500) as $chunk) {
+            Message::query()->insert(array_map(fn () => $this->rawMessage($channel, $stale), $chunk));
+        }
+
+        $live = Message::factory()->create(['channel_id' => $channel->id, 'created_at' => $fresh]);
+
+        app(GarbageCollector::class)->collect();
+
+        $this->assertSame(1, Message::query()->count());
+        $this->assertDatabaseHas('pollcast_message_queue', ['id' => $live->id]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function rawMessage(Channel $channel, string $createdAt): array
+    {
+        return [
+            'id'         => Str::orderedUuid()->toString(),
+            'channel_id' => $channel->id,
+            'event'      => 'stale',
+            'payload'    => json_encode([]),
+            'created_at' => $createdAt,
+            'updated_at' => $createdAt,
+        ];
     }
 }
