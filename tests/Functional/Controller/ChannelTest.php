@@ -2,6 +2,7 @@
 
 namespace SupportPal\Pollcast\Tests\Functional\Controller;
 
+use Firebase\JWT\JWT;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Broadcast;
@@ -13,9 +14,14 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Tests\TestCase;
 
+use function app;
+use function array_merge;
 use function json_encode;
+use function now;
+use function request;
 use function route;
 use function session;
+use function sprintf;
 
 class ChannelTest extends TestCase
 {
@@ -24,7 +30,7 @@ class ChannelTest extends TestCase
         $date = '2021-06-01 00:00:00';
         Carbon::setTestNow(Carbon::parse($date));
 
-        $socketMock = Mockery::mock(Socket::class)->makePartial();
+        $socketMock = Mockery::mock(Socket::class, [app('config'), app('session.store'), request()])->makePartial();
         $socketMock->shouldReceive('hasId')->once()->andReturnFalse();
         $socketMock->shouldReceive('encode')->once()->andReturn($token = '...');
         $socketMock->shouldReceive('getIdFromSession')->once()->andReturn(null);
@@ -40,6 +46,42 @@ class ChannelTest extends TestCase
             ]);
 
         $this->assertSame($token, $response->headers->get(Socket::HEADER));
+    }
+
+    public function testConnectWithExpiredTokenRemovesMembers(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+        $member = Member::factory()->create([
+            'channel_id' => $channel->id,
+            'socket_id'  => self::SOCKET_ID,
+            'data'       => ['user_id' => 1],
+        ]);
+        $other = Member::factory()->create(['channel_id' => $channel->id]);
+
+        $token = JWT::encode([
+            'id'  => self::SOCKET_ID,
+            'iat' => now()->subMinutes(2)->getTimestamp(),
+            'exp' => now()->subMinute()->getTimestamp(),
+        ], app('config')->get('app.key'), 'HS256');
+
+        $response = $this->post(
+            route('supportpal.pollcast.connect'),
+            [],
+            array_merge($this->getAjaxHeaders(), [sprintf('HTTP_%s', Socket::HEADER) => $token])
+        )
+            ->assertStatus(200)
+            ->assertJson(['status' => 'success']);
+
+        $socket = app(Socket::class);
+        $this->assertNotSame(self::SOCKET_ID, $socket->getIdFromToken($response->headers->get(Socket::HEADER) ?? ''));
+        $this->assertDatabaseMissing('pollcast_channel_members', ['id' => $member->id]);
+        $this->assertDatabaseHas('pollcast_channel_members', ['id' => $other->id]);
+        $this->assertDatabaseHas('pollcast_message_queue', [
+            'channel_id' => $channel->id,
+            'socket_id'  => self::SOCKET_ID,
+            'event'      => 'pollcast:member_removed',
+            'payload'    => json_encode($member->data),
+        ]);
     }
 
     public function testSubscribe(): void
