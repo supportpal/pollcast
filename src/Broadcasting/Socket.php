@@ -177,6 +177,7 @@ class Socket
             'channel_id' => $channel->id,
             'socket_id'  => $this->getId(),
         ], ['data' => $data]);
+        $member->touch();
 
         if ($data === null) {
             return;
