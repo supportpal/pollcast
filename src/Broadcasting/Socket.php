@@ -176,7 +176,10 @@ class Socket
         $member = Member::query()->firstOrCreate([
             'channel_id' => $channel->id,
             'socket_id'  => $this->getId(),
-        ], ['data' => $data]);
+        ], [
+            'user_id' => isset($data['user_id']) ? (string) $data['user_id'] : null,
+            'data'    => $data,
+        ]);
         $member->touch();
 
         if ($data === null) {
@@ -191,6 +194,10 @@ class Socket
         $member->delete();
 
         if (! $this->isPresenceChannel($channel->name)) {
+            return;
+        }
+
+        if ($this->hasAnotherSocket($member)) {
             return;
         }
 
@@ -215,8 +222,18 @@ class Socket
             'channel_id' => $channel->id,
             'member_id'  => $member->id,
             'event'      => 'pollcast:subscription_succeeded',
-            'payload'    => Member::query()->where('channel_id', $channel->id)->pluck('data'),
+            'payload'    => Member::query()
+                ->where('channel_id', $channel->id)
+                ->get()
+                ->unique(fn (Member $m) => $m->user_id ?? $m->socket_id)
+                ->pluck('data')
+                ->values(),
         ]))->save();
+
+        // A user is announced once, however many sockets they have on the channel.
+        if (! $this->isEarliestSocket($member)) {
+            return;
+        }
 
         // Broadcast member added event to everyone else in the channel - the joiner already
         // has themselves in the subscription_succeeded member list.
@@ -226,6 +243,37 @@ class Socket
             'event'      => 'pollcast:member_added',
             'payload'    => $memberData,
         ]))->save();
+    }
+
+    private function hasAnotherSocket(Member $member): bool
+    {
+        if ($member->user_id === null) {
+            return false;
+        }
+
+        return Member::query()
+            ->where('channel_id', $member->channel_id)
+            ->where('user_id', $member->user_id)
+            ->where('id', '!=', $member->id)
+            ->exists();
+    }
+
+    /**
+     * Whether this is the user's earliest socket on the channel, which is the one that announces them. Unlike
+     * checking for any other socket, two sockets which join at the same time cannot both decide not to.
+     */
+    private function isEarliestSocket(Member $member): bool
+    {
+        if ($member->user_id === null) {
+            return true;
+        }
+
+        return Member::query()
+            ->where('channel_id', $member->channel_id)
+            ->where('user_id', $member->user_id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->value('id') === $member->id;
     }
 
     /**
