@@ -7,6 +7,7 @@ use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
+use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
@@ -164,7 +165,7 @@ class SocketTest extends TestCase
 
         $data = ['user_id' => 1, 'user_info' => ['name' => 'Someone']];
         $channel = Channel::factory()->create(['name' => 'presence-channel']);
-        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'other-tab', 'data' => $data]);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'other-tab', 'data' => $data, 'created_at' => now()->subMinute()]);
         Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'someone-else', 'data' => $other = ['user_id' => 2]]);
 
         $socket->joinChannel($channel->name, $data);
@@ -175,6 +176,22 @@ class SocketTest extends TestCase
             'payload'    => json_encode([$data, $other]),
         ]);
         $this->assertDatabaseMissing('pollcast_message_queue', ['event' => 'pollcast:member_added']);
+    }
+
+    public function testJoinPresenceChannelAtTheSameTimeAsAnotherSocketOfTheSameUser(): void
+    {
+        $data = ['user_id' => 1, 'user_info' => ['name' => 'Someone']];
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+
+        // Both sockets' rows exist before either has checked for the other.
+        $tabA = Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'tab-a', 'data' => $data]);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'tab-b', 'data' => $data, 'created_at' => $tabA->created_at]);
+
+        foreach (['tab-a', 'tab-b'] as $socketId) {
+            (new Socket(app('config'), app('session.store'), request()))->setId($socketId)->joinChannel($channel->name, $data);
+        }
+
+        $this->assertSame(1, Message::query()->where('event', 'pollcast:member_added')->count());
     }
 
     public function testRemoveMemberFromChannel(): void

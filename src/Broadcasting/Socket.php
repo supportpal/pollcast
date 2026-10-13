@@ -231,7 +231,7 @@ class Socket
         ]))->save();
 
         // A user is announced once, however many sockets they have on the channel.
-        if ($this->hasAnotherSocket($member)) {
+        if (! $this->isEarliestSocket($member)) {
             return;
         }
 
@@ -256,6 +256,24 @@ class Socket
             ->where('user_id', $member->user_id)
             ->where('id', '!=', $member->id)
             ->exists();
+    }
+
+    /**
+     * Whether this is the user's earliest socket on the channel, which is the one that announces them. Unlike
+     * checking for any other socket, two sockets which join at the same time cannot both decide not to.
+     */
+    private function isEarliestSocket(Member $member): bool
+    {
+        if ($member->user_id === null) {
+            return true;
+        }
+
+        return Member::query()
+            ->where('channel_id', $member->channel_id)
+            ->where('user_id', $member->user_id)
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->value('id') === $member->id;
     }
 
     /**
