@@ -138,13 +138,20 @@ class GarbageCollectorTest extends TestCase
         $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message->id]);
     }
 
-    public function testReleasesTheLockAfterCollecting(): void
+    public function testCollectsAtMostOncePerLockTtl(): void
     {
-        app(GarbageCollector::class)->collect();
+        $this->assertTrue(app(GarbageCollector::class)->collect());
 
-        $lock = Cache::lock(GarbageCollector::LOCK, GarbageCollector::LOCK_TTL);
-        $this->assertTrue($lock->get());
-        $lock->release();
+        $message = Message::factory()->create(['created_at' => Carbon::now()->subHours(2)->toDateTimeString()]);
+
+        // The lock is left to expire rather than released, so the next request does not collect again.
+        $this->assertFalse(app(GarbageCollector::class)->collect());
+        $this->assertDatabaseHas('pollcast_message_queue', ['id' => $message->id]);
+
+        $this->travel(GarbageCollector::LOCK_TTL + 1)->seconds();
+
+        $this->assertTrue(app(GarbageCollector::class)->collect());
+        $this->assertDatabaseMissing('pollcast_message_queue', ['id' => $message->id]);
     }
 
     public function testDeletesStaleMessagesInBatches(): void

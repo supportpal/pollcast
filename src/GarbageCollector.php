@@ -16,10 +16,13 @@ use function random_int;
 
 class GarbageCollector
 {
-    /** Cache lock held while a collection runs, so concurrent requests do not contend for the same rows. */
+    /** Cache lock taken by a collection, so concurrent requests do not contend for the same rows. */
     public const string LOCK = 'pollcast:gc';
 
-    /** Upper bound on how long a stuck collector may hold the lock, in seconds. */
+    /**
+     * How long the lock is held for, in seconds. It is left to expire rather than released, so collection runs
+     * at most once in this period however many requests there are.
+     */
     public const int LOCK_TTL = 60;
 
     /**
@@ -37,7 +40,7 @@ class GarbageCollector
     }
 
     /**
-     * Collect if the lottery is won and no other collector currently holds the lock.
+     * Collect if the lottery is won and no collection has run in the last LOCK_TTL seconds.
      *
      * @return bool Whether a collection ran.
      */
@@ -54,12 +57,14 @@ class GarbageCollector
             return true;
         }
 
-        // Non-blocking: if another request is already collecting there is nothing for us to do.
-        return (bool) $store->lock(self::LOCK, self::LOCK_TTL)->get(function () {
-            $this->run();
+        // Non-blocking: if another request has collected recently there is nothing for us to do.
+        if (! $store->lock(self::LOCK, self::LOCK_TTL)->get()) {
+            return false;
+        }
 
-            return true;
-        });
+        $this->run();
+
+        return true;
     }
 
     protected function run(): void
