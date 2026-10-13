@@ -2,14 +2,7 @@
 
 namespace SupportPal\Pollcast\Tests\Functional;
 
-use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
-use Mockery;
-use RuntimeException;
-use SupportPal\Pollcast\GarbageCollector;
-use SupportPal\Pollcast\Http\Middleware\CollectGarbage;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
