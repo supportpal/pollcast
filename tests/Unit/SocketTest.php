@@ -134,6 +134,7 @@ class SocketTest extends TestCase
         $this->assertDatabaseHas('pollcast_channel_members', [
             'channel_id' => $channel->id,
             'socket_id'  => $socketId,
+            'user_id'    => '1',
             'data'       => json_encode($data),
         ]);
 
@@ -154,6 +155,26 @@ class SocketTest extends TestCase
             'event'      => 'pollcast:member_added',
             'payload'    => json_encode($data),
         ]);
+    }
+
+    public function testJoinPresenceChannelWithAnotherSocketOfTheSameUser(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $socket->setId('test');
+
+        $data = ['user_id' => 1, 'user_info' => ['name' => 'Someone']];
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'other-tab', 'data' => $data]);
+        Member::factory()->create(['channel_id' => $channel->id, 'socket_id' => 'someone-else', 'data' => $other = ['user_id' => 2]]);
+
+        $socket->joinChannel($channel->name, $data);
+
+        $this->assertDatabaseHas('pollcast_message_queue', [
+            'channel_id' => $channel->id,
+            'event'      => 'pollcast:subscription_succeeded',
+            'payload'    => json_encode([$data, $other]),
+        ]);
+        $this->assertDatabaseMissing('pollcast_message_queue', ['event' => 'pollcast:member_added']);
     }
 
     public function testRemoveMemberFromChannel(): void
@@ -196,6 +217,21 @@ class SocketTest extends TestCase
             'event'      => 'pollcast:member_removed',
             'payload'    => json_encode([]),
         ]);
+    }
+
+    public function testRemoveMemberFromPresenceChannelWithAnotherSocketOfTheSameUser(): void
+    {
+        $socket = new Socket(app('config'), app('session.store'), request());
+
+        $data = ['user_id' => 1];
+        $channel = Channel::factory()->create(['name' => 'presence-name']);
+        $member = Member::factory()->create(['channel_id' => $channel->id, 'data' => $data]);
+        Member::factory()->create(['channel_id' => $channel->id, 'data' => $data]);
+
+        $socket->removeMemberFromChannel($member, $channel);
+
+        $this->assertDatabaseMissing('pollcast_channel_members', ['id' => $member->id]);
+        $this->assertDatabaseMissing('pollcast_message_queue', ['event' => 'pollcast:member_removed']);
     }
 
     /**

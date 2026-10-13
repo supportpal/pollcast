@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property-read string $id
  * @property-read string $channel_id
  * @property-read string $socket_id
+ * @property-read string|null $user_id
  * @property-read mixed[] $data
  */
 class Member extends Model
@@ -33,12 +34,13 @@ class Member extends Model
     protected $guarded = [];
 
     /** @var list<string> */
-    protected $fillable = ['channel_id', 'socket_id', 'data'];
+    protected $fillable = ['channel_id', 'socket_id', 'user_id', 'data'];
 
     /** @var array<string, string> */
     protected $casts = [
         'channel_id' => 'string',
         'socket_id'  => 'string',
+        'user_id'    => 'string',
         'data'       => 'json',
     ];
 

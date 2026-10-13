@@ -30,6 +30,9 @@ class MemberFactory extends Factory
         return [
             'channel_id' => Channel::factory(),
             'socket_id'  => fake()->uuid,
+            'user_id'    => fn (array $attributes) => isset($attributes['data']['user_id'])
+                ? (string) $attributes['data']['user_id']
+                : null,
             'data'       => null,
         ];
     }
