@@ -10,6 +10,7 @@ use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
+use function config;
 use function json_encode;
 
 class GarbageCollectorTest extends TestCase
@@ -75,7 +76,7 @@ class GarbageCollectorTest extends TestCase
     public function testMemberTtlScalesWithPollingInterval(): void
     {
         // A 2 minute polling interval outlives the 60s token, so members get 3 x 2 minutes.
-        $this->app['config']->set('pollcast.polling_interval', 120000);
+        config()->set('pollcast.polling_interval', 120000);
 
         $stale = Member::factory()->create(['updated_at' => Carbon::now()->subMinutes(7)->toDateTimeString()]);
         $live = Member::factory()->create(['updated_at' => Carbon::now()->subMinutes(5)->toDateTimeString()]);
