@@ -9,6 +9,7 @@ use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
 use SupportPal\Pollcast\Model\Message;
 
+use function max;
 use function random_int;
 
 class GarbageCollector
@@ -32,7 +33,7 @@ class GarbageCollector
 
         Member::query()
             ->with('channel')
-            ->where('updated_at', '<', Carbon::now()->subHour()->toDateTimeString())
+            ->where('updated_at', '<', Carbon::now()->subSeconds($this->memberTtl())->toDateTimeString())
             ->each(function (Member $member) {
                 /** @var Channel $channel */
                 $channel = $member->channel;
@@ -44,6 +45,16 @@ class GarbageCollector
             ->where('pollcast_channel.updated_at', '<', Carbon::now()->subDay()->toDateTimeString())
             ->whereNull('pollcast_channel_members.socket_id')
             ->delete();
+    }
+
+    /**
+     * How long a member may go without polling before it is considered gone, in seconds.
+     */
+    protected function memberTtl(): int
+    {
+        $pollingInterval = (int) ($this->config->get('pollcast.polling_interval', 5000) / 1000);
+
+        return 3 * max($pollingInterval, Socket::LIFETIME);
     }
 
     /**

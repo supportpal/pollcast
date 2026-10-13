@@ -30,12 +30,12 @@ class GarbageCollectorTest extends TestCase
 
         $member1 = Member::factory()->create([
             'channel_id' => $channel2->id,
-            'updated_at' => Carbon::now()->subHours(2)->toDateTimeString(),
+            'updated_at' => Carbon::now()->subMinutes(4)->toDateTimeString(),
             'data'       => ['member1']
         ]);
         $member2 = Member::factory()->create([
             'channel_id' => $channel2->id,
-            'updated_at' => Carbon::now()->subMinutes(5)->toDateTimeString(),
+            'updated_at' => Carbon::now()->subMinutes(2)->toDateTimeString(),
             'data'       => ['member2']
         ]);
         $member3 = Member::factory()->create([
@@ -70,6 +70,20 @@ class GarbageCollectorTest extends TestCase
             'payload'   => json_encode($member1->data),
         ]);
         $this->assertDatabaseMissing('pollcast_message_queue', ['event' => 'pollcast:member_removed', 'payload' => json_encode($member3->data)]);
+    }
+
+    public function testMemberTtlScalesWithPollingInterval(): void
+    {
+        // A 2 minute polling interval outlives the 60s token, so members get 3 x 2 minutes.
+        $this->app['config']->set('pollcast.polling_interval', 120000);
+
+        $stale = Member::factory()->create(['updated_at' => Carbon::now()->subMinutes(7)->toDateTimeString()]);
+        $live = Member::factory()->create(['updated_at' => Carbon::now()->subMinutes(5)->toDateTimeString()]);
+
+        app(GarbageCollector::class)->collect();
+
+        $this->assertDatabaseMissing('pollcast_channel_members', ['id' => $stale->id]);
+        $this->assertDatabaseHas('pollcast_channel_members', ['id' => $live->id]);
     }
 
     public function testCollectEmptyChannelOnly(): void

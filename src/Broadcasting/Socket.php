@@ -31,6 +31,9 @@ class Socket
 
     public const string HEADER = 'X-Socket-ID';
 
+    /** How long an encoded socket token is valid for, in seconds. */
+    public const int LIFETIME = 60;
+
     /** Session key, only for backwards compatibility. */
     public const string UUID = 'pollcast:uuid';
 
@@ -58,7 +61,7 @@ class Socket
         $payload = [
             'id'  => $this->id,
             'iat' => now()->getTimestamp(), // Issued at
-            'exp' => now()->addMinute()->getTimestamp(), // Expiry
+            'exp' => now()->addSeconds(self::LIFETIME)->getTimestamp(), // Expiry
         ];
 
         return JWT::encode($payload, $this->getKey(), $this->getAlgorithm());
