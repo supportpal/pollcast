@@ -10,6 +10,7 @@ use Firebase\JWT\Key;
 use Illuminate\Broadcasting\Broadcasters\UsePusherChannelConventions;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Session\Session;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -174,6 +175,7 @@ class Socket
             'channel_id' => $channel->id,
             'socket_id'  => $this->getId(),
         ], ['data' => $data]);
+        $member->touch();
 
         if ($data === null) {
             return;
@@ -201,6 +203,18 @@ class Socket
     }
 
     /**
+     * @param string[] $channelIds
+     * @return Collection<int, Member>
+     */
+    public function activeMembers(array $channelIds): Collection
+    {
+        return Member::query()
+            ->whereIn('channel_id', $channelIds)
+            ->where('updated_at', '>=', now()->subSeconds($this->config->get('pollcast.member_timeout', 180))->toDateTimeString())
+            ->get();
+    }
+
+    /**
      * @param mixed[] $memberData
      */
     protected function joinedPresenceChannel(Channel $channel, Member $member, array $memberData): void
@@ -211,7 +225,7 @@ class Socket
             'channel_id' => $channel->id,
             'member_id'  => $member->id,
             'event'      => 'pollcast:subscription_succeeded',
-            'payload'    => Member::query()->where('channel_id', $channel->id)->pluck('data'),
+            'payload'    => $this->activeMembers([$channel->id])->pluck('data'),
         ]))->save();
 
         // Broadcast member added event to everyone else in the channel - the joiner already

@@ -7,6 +7,7 @@ use SupportPal\Pollcast\Broadcasting\Socket;
 use SupportPal\Pollcast\Exception\InvalidSocketException;
 use SupportPal\Pollcast\Model\Channel;
 use SupportPal\Pollcast\Model\Member;
+use SupportPal\Pollcast\Model\Message;
 use SupportPal\Pollcast\Tests\TestCase;
 
 use function app;
@@ -153,6 +154,49 @@ class SocketTest extends TestCase
             'socket_id'  => $socketId,
             'event'      => 'pollcast:member_added',
             'payload'    => json_encode($data),
+        ]);
+    }
+
+    public function testJoinPresenceChannelListsActiveMembersOnly(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'data'       => ['user_id' => 2],
+            'updated_at' => now()->subMinutes(2),
+        ]);
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'data'       => ['user_id' => 3],
+            'updated_at' => now()->subMinutes(4),
+        ]);
+
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $socket->setId('test');
+        $socket->joinChannel($channel->name, ['user_id' => 1]);
+
+        $message = Message::where('event', 'pollcast:subscription_succeeded')->firstOrFail();
+        $this->assertEqualsCanonicalizing([['user_id' => 1], ['user_id' => 2]], $message->payload);
+    }
+
+    public function testRejoinPresenceChannelListsSelf(): void
+    {
+        $channel = Channel::factory()->create(['name' => 'presence-channel']);
+        Member::factory()->create([
+            'channel_id' => $channel->id,
+            'socket_id'  => 'test',
+            'data'       => ['user_id' => 1],
+            'updated_at' => now()->subHour(),
+        ]);
+
+        $socket = new Socket(app('config'), app('session.store'), request());
+        $socket->setId('test');
+        $socket->joinChannel($channel->name, ['user_id' => 1]);
+
+        $this->assertDatabaseHas('pollcast_message_queue', [
+            'channel_id' => $channel->id,
+            'event'      => 'pollcast:subscription_succeeded',
+            'payload'    => json_encode([['user_id' => 1]]),
         ]);
     }
 
